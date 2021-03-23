@@ -34,7 +34,7 @@ _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\begin{{document}}
 {{\\fontsize{{72}}{{86}} \\selectfont
 
-{0}
+${0}$
 }}
 \\end{{document}}"""
 

@@ -8,7 +8,8 @@ from PIL import Image
 import typing
 from PIL import Image
 from PIL.ImageOps import invert
-from pnglatex import pnglatex
+# from pnglatex import pnglatex
+from pnglatex.pnglatex import _get_fname, Path, _BINARIES, devnull, _cleanup, _run, _get_bin
 from io import BytesIO
 import config
 from helper_functions import *
@@ -152,30 +153,58 @@ class Utility(commands.Cog):
             pass
 
 
-    def latexToImage(self, formula):
-        image = Image.open(pnglatex(r"{\huge $"+formula+r"$}", 'tmpFormula.png'))
+    def ownpnglatex(self, tex_string, output=None):
+        """
+        Produce an png based on a input LaTeX snippet.
 
-        image = invert(image)
-        image = image.convert("RGBA")
-        datas = image.getdata()
+        @param tex_string: The LaTeX string.
+        @param output: The output filename. It can also be a pathlib.Path object.
+                    If not provided, this will be randomly generated.
 
-        newData = []
-        for item in datas:
-            if item[0] == 0 and item[1] == 0 and item[2] == 0:
-                newData.append((255, 255, 255, 0))
-            else:
-                newData.append(item)
+        @return: A Path object of the output file
+        @raises ValueError: If the input is empty of something went wrong with
+                            the image creation.
+        """
 
-        image.putdata(newData)
-        return image
 
+        _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
+        \\usepackage{{mathtools}}
+        \\usepackage[german]{{babel}}
+        \\thispagestyle{{empty}}
+        \\usepackage{{lmodern}}
+        \\usepackage[left=1cm,right=1cm]{{geometry}}
+        \\begin{{document}}
+        {{\\fontsize{{72}}{{86}} \\selectfont
+
+        {0}
+        }}
+        \\end{{document}}"""
+
+        if not tex_string:
+            raise ValueError("LaTeX expression cannot be empty!")
+        jobname = _get_fname()
+        output = output or jobname + '.png'
+        tex_string = _TEX_BP.format(tex_string)
+        binaries = tuple(_get_bin(b) for b in _BINARIES)
+
+        with _cleanup(jobname), open(devnull, 'w') as null:
+            status = _run(tex_string, jobname, output, null, binaries)
+
+        if status != 0:
+            with Path(output) as o:
+                try:
+                    o.unlink()
+                except FileNotFoundError:
+                    pass
+            raise ValueError("Failed to generate png file.")
+        return Path(output)
 
     @commands.command()
     async def latex(self, ctx, *, arg):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
         arg = arg.strip("` ")
-        img = self.latexToImage(arg)
+        img = self.ownpnglatex(arg)
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')

@@ -32,7 +32,7 @@ _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\usepackage{{lmodern}}
 \\usepackage[left=1cm,right=1cm]{{geometry}}
 \\begin{{document}}
-{{\\fontsize{{72}}{{86}} \\selectfont
+{{\\fontsize{{36}}{{43}} \\selectfont
 
 {0}
 }}

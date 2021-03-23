@@ -165,7 +165,7 @@ class Utility(commands.Cog):
             pass
 
 
-    async def ownpnglatex(self, tex_string, output=None):
+    def ownpnglatex(self, tex_string, output=None):
         """
         Produce an png based on a input LaTeX snippet.
 
@@ -183,7 +183,7 @@ class Utility(commands.Cog):
         jobname = _get_fname()
         output = output or jobname + '.png'
         tex_string = _TEX_BP.format(tex_string)
-        await ctx.send(tex_string)
+        print(tex_string)
         binaries = tuple(_get_bin(b) for b in _BINARIES)
 
         with _cleanup(jobname), open(devnull, 'w') as null:
@@ -203,7 +203,7 @@ class Utility(commands.Cog):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
         arg = arg.strip("` ")
-        img = await self.ownpnglatex(arg)
+        img = self.ownpnglatex(arg)
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')

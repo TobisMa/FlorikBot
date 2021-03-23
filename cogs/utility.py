@@ -183,7 +183,6 @@ class Utility(commands.Cog):
         jobname = _get_fname()
         output = output or jobname + '.png'
         tex_string = _TEX_BP.format(tex_string)
-        print(tex_string)
         binaries = tuple(_get_bin(b) for b in _BINARIES)
 
         with _cleanup(jobname), open(devnull, 'w') as null:

@@ -176,7 +176,7 @@ class Utility(commands.Cog):
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
         arg = arg.strip("` ")
         img = self.latexToImage(arg)
-        img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
+        # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
             image_binary.seek(0)

@@ -25,6 +25,18 @@ from cogs.utility import *
 from cogs.wholesome import *
 
 
+_TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
+\\usepackage{{mathtools}}
+\\usepackage[german]{{babel}}
+\\thispagestyle{{empty}}
+\\usepackage{{lmodern}}
+\\usepackage[left=1cm,right=1cm]{{geometry}}
+\\begin{{document}}
+{{\\fontsize{{72}}{{86}} \\selectfont
+
+{0}
+}}
+\\end{{document}}"""
 
 class Utility(commands.Cog):
     """Andere nützliche Commands"""
@@ -165,20 +177,6 @@ class Utility(commands.Cog):
         @raises ValueError: If the input is empty of something went wrong with
                             the image creation.
         """
-
-
-        _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
-        \\usepackage{{mathtools}}
-        \\usepackage[german]{{babel}}
-        \\thispagestyle{{empty}}
-        \\usepackage{{lmodern}}
-        \\usepackage[left=1cm,right=1cm]{{geometry}}
-        \\begin{{document}}
-        {{\\fontsize{{72}}{{86}} \\selectfont
-
-        {0}
-        }}
-        \\end{{document}}"""
 
         if not tex_string:
             raise ValueError("LaTeX expression cannot be empty!")

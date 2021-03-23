@@ -34,7 +34,7 @@ _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\begin{{document}}
 {{\\fontsize{{72}}{{86}} \\selectfont
 
-${0}$
+{0}
 }}
 \\end{{document}}"""
 
@@ -198,12 +198,29 @@ class Utility(commands.Cog):
             raise ValueError("Failed to generate png file.")
         return Path(output)
 
+    def latexToImage(self, formula):
+        image = Image.open(self.ownpnglatex(r"$"+formula+r"$", 'tmpFormula.png'))
+
+        image = invert(image)
+        image = image.convert("RGBA")
+        datas = image.getdata()
+
+        newData = []
+        for item in datas:
+            if item[0] == 0 and item[1] == 0 and item[2] == 0:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append(item)
+
+        image.putdata(newData)
+        return image
+
     @commands.command()
     async def latex(self, ctx, *, arg):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
         arg = arg.strip("` ")
-        img = self.ownpnglatex(arg)
+        img = self.latexToImage(arg)
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')

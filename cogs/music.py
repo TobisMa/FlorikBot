@@ -77,7 +77,7 @@ class Music(commands.Cog):
         f = open("test/tmp.mp3", "wb") 
         await msg.attachments[0].save(f)
         source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(f.name))
-        self.bot.voice_clients[0].play(source, after=lambda e: self.raise_error(e) if e else None)
+        ctx.voice_client.play(source, after=lambda e: self.raise_error(e) if e else None)
         await asyncio.sleep(10)
         os.remove(f.name)
 

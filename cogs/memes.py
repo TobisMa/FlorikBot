@@ -305,7 +305,13 @@ class Memes(commands.Cog):
 
         channel = self.bot.get_channel(config.GOOD_MEMES_CHANNEL_ID)
         e = discord.Embed()
-        e.description = f"[Nachricht:]({msg.jump_url})"
+        e.description = ""
+        if msg.reference != None: 
+            # TODO vereinfachbar in v1.7
+            c = self.bot.get_channel(msg.reference.channel_id)
+            m = await c.fetch_message(msg.reference.message_id)
+            e.description += f"[bezieht sich auf ...]({m.jump_url})\n"
+        e.description = f"[Link zur Nachricht]({msg.jump_url})"
         e.set_author(name=msg.author,
                      icon_url=msg.author.avatar_url)
         e.color = msg.guild.get_member(

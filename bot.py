@@ -176,16 +176,15 @@ class HelpCommand(commands.HelpCommand):
         await msg.edit(embed=e)
 
 
-# Ahmads Herrschaft
-class Ahmad(commands.Cog):
+class ServerRules(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
         if after.id == 693062821650497597:
-            if after.name != "Ahmad-Kult":
-                await after.edit(name="Ahmad-Kult")
+            if after.name != "Mujika-Kult":
+                await after.edit(name="Mujika-Kult")
 
     @commands.Cog.listener()
     async def on_message(author, message):
@@ -206,7 +205,7 @@ bot.load_extension("cogs.event")
 bot.load_extension("cogs.news")
 
 
-bot.add_cog(Ahmad(bot))
+bot.add_cog(ServerRules(bot))
 
 
 bot.help_command = HelpCommand()

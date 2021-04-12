@@ -38,9 +38,9 @@ class Scraper(commands.Cog):
         self.bot = bot
         self.id = 0
         self.config = {
-            "url": "",
-            "base_url": "",
-            "radius": 0
+            "url": "https://www.ebay-kleinanzeigen.de/s-mainz/anzeige:angebote/macbook-pro-m1/k0l5315",
+            "base_url": "https://www.ebay-kleinanzeigen.de",
+            "radius": 
         }
         if config.PREFIX == ",":
             self.scraper.start()
@@ -97,7 +97,7 @@ class Scraper(commands.Cog):
         for ad in ads:
             if ad.id not in data[str(self.id)]["ids"]:
                 data[str(self.id)]["ids"].append(ad.id)
-                channel = self.bot.get_channel(config.LOG_CHANNEL_ID)
+                channel = self.bot.get_channel(830780216162648094)
                 await channel.send(embed=ad_to_embed(ad), content=self.bot.get_user(self.id).mention)
 
         with open(config.path + '/json/user_config.json', 'w') as myfile:

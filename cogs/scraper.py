@@ -68,7 +68,7 @@ class Scraper(commands.Cog):
 
                     title = i.find("a", {"class": "ellipsis"})
                     ad.title = title.contents[0]
-                    ad.url = config["base_url"] + title["href"]
+                    ad.url = c["base_url"] + title["href"]
                     ads.append(ad)
                 except AttributeError:
                     continue

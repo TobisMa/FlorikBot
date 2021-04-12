@@ -56,24 +56,21 @@ class Scraper(commands.Cog):
             soup = BeautifulSoup(r.text, features="html5lib")
             results = soup.find("div", id="srchrslt-content")
             for i in results.find_all("article"):
-                try:
-                    ad = Anzeige()
-                    ad.ad_nr = i["data-adid"]
-                    details = i.find("div", {"class": "aditem-details"})
-                    ad.price = i.find("p", {"class": "aditem-main--middle--price"}).text
-                    ad.location = i.find("div", {"class": "aditem-main--top--left"}).text
+                ad = Anzeige()
+                ad.ad_nr = i["data-adid"]
+                details = i.find("div", {"class": "aditem-details"})
+                ad.price = i.find("p", {"class": "aditem-main--middle--price"}).text
+                ad.location = i.find("div", {"class": "aditem-main--top--left"}).text
 
-                    ad.description = i.find("div", {"class": "aditem-main"}).contents[3].contents[0]
-                    try:
-                        ad.time = i.find("div", {"class": "aditem-main--top--right"}).text
-                    except: # Falls eventuell None zurückkommt
-                        pass
-                    title = i.find("a", {"class": "ellipsis"})
-                    ad.title = title.contents[0]
-                    ad.url = c["base_url"] + title["href"]
-                    ads.append(ad)
-                except AttributeError:
-                    continue
+                ad.description = i.find("div", {"class": "aditem-main"}).contents[3].contents[0]
+                try:
+                    ad.time = i.find("div", {"class": "aditem-main--top--right"}).text
+                except: # Falls eventuell None zurückkommt
+                    pass
+                title = i.find("a", {"class": "ellipsis"})
+                ad.title = title.contents[0]
+                ad.url = c["base_url"] + title["href"]
+                ads.append(ad)
         except Exception as e:
             channel = self.bot.get_channel(config.LOG_CHANNEL_ID)
             await channel.send(embed=simple_embed(self.bot.user, "error in scraper", color=discord.Color.orange()))

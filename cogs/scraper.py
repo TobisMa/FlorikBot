@@ -65,7 +65,7 @@ class Scraper(commands.Cog):
 
                     ad.description = i.find("div", {"class": "aditem-main"}).contents[3].contents[0]
                     try:
-                        ad.time = i.find("div", {"class": "aditem-main--top--right"})
+                        ad.time = i.find("div", {"class": "aditem-main--top--right"}).text
                     except: # Falls eventuell None zurückkommt
                         pass
                     title = i.find("a", {"class": "ellipsis"})

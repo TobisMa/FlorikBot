@@ -28,7 +28,8 @@ def ad_to_embed(ad: Anzeige):
     e.url = ad.url
     e.add_field(name="Preis", value=ad.price)
     e.add_field(name="Ort", value=ad.location)
-    e.set_footer(text=ad.time)
+    if(ad.time != ""):
+        e.set_footer(text=ad.time)
     e.color = discord.Color.dark_red()
     return e
 
@@ -63,9 +64,10 @@ class Scraper(commands.Cog):
                     ad.location = i.find("div", {"class": "aditem-main--top--left"}).text
 
                     ad.description = i.find("div", {"class": "aditem-main"}).contents[3].contents[0]
-                    
-                    ad.time = i.find("div", {"class": "aditem-main--top--right"})
-
+                    try:
+                        ad.time = i.find("div", {"class": "aditem-main--top--right"})
+                    except: # Falls eventuell None zurückkommt
+                        pass
                     title = i.find("a", {"class": "ellipsis"})
                     ad.title = title.contents[0]
                     ad.url = c["base_url"] + title["href"]
@@ -83,7 +85,7 @@ class Scraper(commands.Cog):
             await channel.send(embed=simple_embed(self.bot.user, "scraper worked without an error", color=discord.Color.greyple()))
         return ads
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=60)
     async def scraper(self):
         ads = await self.get_ads(self.config)
         with open(config.path + '/json/user_config.json', 'r') as myfile:

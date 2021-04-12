@@ -40,7 +40,7 @@ class Scraper(commands.Cog):
         self.config = {
             "url": "https://www.ebay-kleinanzeigen.de/s-mainz/anzeige:angebote/macbook-pro-m1/k0l5315",
             "base_url": "https://www.ebay-kleinanzeigen.de",
-            "radius": 
+            "radius": 60
         }
         if config.PREFIX == ",":
             self.scraper.start()

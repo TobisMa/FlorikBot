@@ -57,7 +57,7 @@ class Scraper(commands.Cog):
             results = soup.find("div", id="srchrslt-content")
             for i in results.find_all("article"):
                 ad = Anzeige()
-                ad.ad_nr = i["data-adid"]
+                ad.id = i["data-adid"]
                 details = i.find("div", {"class": "aditem-details"})
                 ad.price = i.find("p", {"class": "aditem-main--middle--price"}).text
                 ad.location = i.find("div", {"class": "aditem-main--top--left"}).text

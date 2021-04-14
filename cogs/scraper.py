@@ -55,6 +55,10 @@ class Scraper(commands.Cog):
             r = requests.get(url=f'{c["url"]}r{c["radius"]}', headers=headers)
             soup = BeautifulSoup(r.text, features="html5lib")
             results = soup.find("div", id="srchrslt-content")
+            if results == None:
+                channel = self.bot.get_channel(config.LOG_CHANNEL_ID)
+                await channel.send(embed=simple_embed(self.bot.user, "no search results", color=discord.Color.orange()))
+                return []
             for i in results.find_all("article"):
                 ad = Anzeige()
                 ad.id = i["data-adid"]
@@ -73,6 +77,9 @@ class Scraper(commands.Cog):
                 ads.append(ad)
         except Exception as e:
             channel = self.bot.get_channel(config.LOG_CHANNEL_ID)
+            if isinstance(e, ConnectionError):
+                await channel.send(embed=simple_embed(self.bot.user, "scraper connection error", color=discord.Color.orange()))
+                return []
             await channel.send(embed=simple_embed(self.bot.user, "error in scraper", color=discord.Color.orange()))
             await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), e)
             return await self.get_ads(c, failed_before=True)

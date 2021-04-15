@@ -43,6 +43,7 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.quotes = self.get_quotes()
 
     @commands.command()
     async def embed(self, ctx, *args):
@@ -225,6 +226,51 @@ class Utility(commands.Cog):
             img.save(image_binary, 'PNG')
             image_binary.seek(0)
             await ctx.send(file=discord.File(fp=image_binary, filename='image.png'))
+
+    @commands.command()
+    async def zitate(self, ctx, *, arg):
+        """Fügt ein Zitat der Zitate-sammlung hinzu"""
+        e = simple_embed(ctx.author, "Möchtest du dieses Zitat speichern?", arg)
+        msg = await ctx.channel.send(embed=e)
+        check = "\N{White Heavy Check Mark}"
+        await check.add_reaction(check)
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and _reaction.emoji == check and _reaction.message == msg)
+        except asyncio.TimeoutError:
+            e.color = discord.Color.orange()
+            await msg.edit(embed=e)
+            return
+
+        self.add_quote(arg)
+        e.color = discord.Color.green()
+        await msg.edit(embed=e)
+        
+    @commands.command()
+    async def zitat(self, ctx):
+        quote = random.choice(self.quotes)
+        e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote), quote)
+        await ctx.channel.send(e)
+        
+    def get_quotes(self):
+        try:
+            with open(config.path + f'/json/quotes.json', 'r') as myfile:
+                return json.loads(myfile.read())
+        except FileNotFoundError:
+            return []
+
+    def add_quote(self, quote):
+        self.quotes.append(quote)
+        try:
+            with open(config.path + '/json/quotes.json', 'w') as myfile:
+                json.dump(self.quotes, myfile)
+        except FileNotFoundError:
+            file = open(config.path + '/json/quotes.json', 'w')
+            file.write("[]")
+            file.close()
+            with open(config.path + '/json/quotes.json', 'w') as myfile:
+                json.dump(self.quotes, myfile)
+        
+        
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

@@ -248,7 +248,7 @@ class Utility(commands.Cog):
     @commands.command()
     async def zitat(self, ctx):
         quote = random.choice(self.quotes)
-        e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote), quote)
+        e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote) + 1, quote)
         await ctx.channel.send(e)
         
     def get_quotes(self):

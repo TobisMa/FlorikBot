@@ -235,16 +235,21 @@ class Utility(commands.Cog):
         msg = await ctx.channel.send(embed=e)
         check = "\N{White Heavy Check Mark}"
         await msg.add_reaction(check)
+        cross = "\N{CROSS MARK}"
+        await msg.add_reaction(cross)
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and _reaction.emoji == check and _reaction.message == msg)
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and (_reaction.emoji == check or _reaction.emoji == cross) and _reaction.message == msg)
         except asyncio.TimeoutError:
             e.color = discord.Color.orange()
             await msg.edit(embed=e)
             return
-
-        self.add_quote(arg)
-        e.color = discord.Color.green()
-        await msg.edit(embed=e)
+        if reaction.emoji == cross:
+            e.color = discord.Color.orange()
+            await msg.edit(embed=e)
+        elif reaction.emoji == check:
+            self.add_quote(arg)
+            e.color = discord.Color.green()
+            await msg.edit(embed=e)
         
     @commands.command()
     async def zitat(self, ctx):

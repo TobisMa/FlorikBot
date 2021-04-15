@@ -257,7 +257,7 @@ class Utility(commands.Cog):
             await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
             return
         quote = random.choice(self.quotes)
-        e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote) + 1, quote)
+        e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
         await ctx.channel.send(e)
         
     def get_quotes(self):

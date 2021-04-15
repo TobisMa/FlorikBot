@@ -18,7 +18,7 @@ class Erinnerungen(commands.Cog):
         self.bot = bot
         self.checkReminder.start()
 
-    @commands.command(aliases=["remindme", "remind", "reminder"])
+    @commands.command(aliases=["remindme", "remind", "reminder", "rmd", "rmnd", "rmndr"])
     async def setreminder(self, ctx, *, arg):
         """Erstellt eine neue Erinnerung
             nutze das Schema

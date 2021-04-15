@@ -77,7 +77,7 @@ class Scraper(commands.Cog):
                 ads.append(ad)
         except Exception as e:
             channel = self.bot.get_channel(config.LOG_CHANNEL_ID)
-            if isinstance(e, ConnectionError):
+            if isinstance(e, ConnectionError) or isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, ConnectionAbortedError):
                 await channel.send(embed=simple_embed(self.bot.user, "scraper connection error", color=discord.Color.orange()))
                 return []
             await channel.send(embed=simple_embed(self.bot.user, "error in scraper", color=discord.Color.orange()))

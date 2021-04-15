@@ -231,10 +231,11 @@ class Utility(commands.Cog):
     @commands.command()
     async def zitate(self, ctx, *, arg):
         """Fügt ein Zitat der Zitate-sammlung hinzu"""
+        if()
         e = simple_embed(ctx.author, "Möchtest du dieses Zitat speichern?", arg)
         msg = await ctx.channel.send(embed=e)
         check = "\N{White Heavy Check Mark}"
-        await check.add_reaction(check)
+        await msg.add_reaction(check)
         try:
             reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and _reaction.emoji == check and _reaction.message == msg)
         except asyncio.TimeoutError:
@@ -250,6 +251,7 @@ class Utility(commands.Cog):
     async def zitat(self, ctx):
         if len(self.quotes) == 0:
             await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
+            return
         quote = random.choice(self.quotes)
         e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote) + 1, quote)
         await ctx.channel.send(e)

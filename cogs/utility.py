@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.errors import HTTPException
 
+import random
 import ast
 import io
 from PIL import Image
@@ -247,6 +248,8 @@ class Utility(commands.Cog):
         
     @commands.command()
     async def zitat(self, ctx):
+        if len(self.quotes) == 0:
+            await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
         quote = random.choice(self.quotes)
         e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + self.quotes.index(quote) + 1, quote)
         await ctx.channel.send(e)

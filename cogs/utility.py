@@ -231,7 +231,6 @@ class Utility(commands.Cog):
     @commands.command()
     async def zitate(self, ctx, *, arg):
         """Fügt ein Zitat der Zitate-sammlung hinzu"""
-        if()
         e = simple_embed(ctx.author, "Möchtest du dieses Zitat speichern?", arg)
         msg = await ctx.channel.send(embed=e)
         check = "\N{White Heavy Check Mark}"

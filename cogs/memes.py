@@ -1,6 +1,6 @@
 from asyncio import futures
 import discord
-from discord.embeds import Embed
+from discord.embeds import _EmptyEmbed
 from discord.ext import commands
 
 import asyncio
@@ -325,7 +325,7 @@ class Memes(commands.Cog):
                 e.set_image(url=msg.attachments[0].url)
 
                 counter = 0
-                while isinstance(e.image, Embed.Empty) and counter < 100:
+                while isinstance(e.image, _EmptyEmbed) and counter < 100:
                     counter += 1
                     e.set_image(url=msg.attachments[0].url)
                 if counter == 100:

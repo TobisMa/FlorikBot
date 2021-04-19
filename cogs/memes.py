@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import config
 from helper_functions import *
-from bot import on_command_error
+from bot import is_bot_dev, on_command_error
 
 def is_private_server():
     async def predicate(ctx):
@@ -345,7 +345,12 @@ class Memes(commands.Cog):
                 e.set_image(url=msg.content)
             await channel.send(embed=e)
 
-
+    @is_bot_dev()
+    @commands.command()
+    async def resend_good_meme(self, ctx, msgid):
+        msg = await self.bot.get_channel(config.MEME_CHANNEL_ID).fetch_message(msgid)
+        self.send_good_meme(msg, True)
+        
 def updateVoteListFile(voteList):
     with open(config.path + '/json/voteList.json', 'w') as myfile:
         json.dump(voteList, myfile)

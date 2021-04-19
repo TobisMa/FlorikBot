@@ -1,5 +1,6 @@
 from asyncio import futures
 import discord
+from discord.embeds import Embed
 from discord.ext import commands
 
 import asyncio
@@ -322,20 +323,16 @@ class Memes(commands.Cog):
         if(len(msg.attachments) > 0):
             if(is_url_image(msg.attachments[0].url)):
                 e.set_image(url=msg.attachments[0].url)
-                new_msg = await channel.send(embed=e)
 
                 counter = 0
-                e = new_msg.embeds[0]
-                while e.image.width == 0 and counter < 100:
+                while isinstance(e.image, Embed.Empty) and counter < 100:
                     counter += 1
                     e.set_image(url=msg.attachments[0].url)
-                    if(e.image.width > 0):
-                        await new_msg.edit(embed=e)
                 if counter == 100:
                     await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), Exception(f"{str(msg.id)}: good meme was not sent correctly."))
                 elif counter > 0:
                     await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), Exception(f"{str(msg.id)}: good meme was not sent correctly, took {counter} attempts."))
-
+                await channel.send(embed=e)
 
             else:
                 await channel.send(embed=e, file=await msg.attachments[0].to_file())

@@ -203,7 +203,7 @@ bot.load_extension("cogs.music")
 bot.load_extension("cogs.event")
 bot.load_extension("cogs.news")
 
-bot.load_extension("cogs.scraper")
+# bot.load_extension("cogs.scraper")
 
 bot.add_cog(ServerRules(bot))
 

@@ -325,7 +325,7 @@ class Memes(commands.Cog):
                 e.set_image(url=msg.attachments[0].url)
 
                 counter = 0
-                while isinstance(e.image, _EmptyEmbed) or isinstance(e.image, discord.Embed.Empty) or e.image.width == 0 and counter < 100:
+                while isinstance(e.image, _EmptyEmbed) or e.image.width == 0 and counter < 100:
                     counter += 1
                     e.set_image(url=msg.attachments[0].url)
                 if counter == 100:

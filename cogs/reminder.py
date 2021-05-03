@@ -79,13 +79,21 @@ class Erinnerungen(commands.Cog):
     async def myreminders(self, ctx):
         """Listet alle Erinnerungen eines Nutzers auf"""
         reminder = getReminder()
+        guild = self.bot.get_guild(config.SERVER_ID)
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
                               timestamp=datetime.datetime.utcnow())
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
             for singleReminder in reminder[str(ctx.author.id)]:
-                e.add_field(name=singleReminder[0],
-                            value=singleReminder[1], inline=False)
+                # new
+                if singleReminder[0] == "{":
+                    rem = Reminder(r=singleReminder)
+                    mentions = ' '.join([guild.get_role(role).mention for role in rem.roles])
+                    mentions += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
+                    e.add_field(name=rem.date, value=mentions + "\n" + rem.message, inline=False)
+                #old
+                else:
+                    e.add_field(name=singleReminder[0], value=singleReminder[1], inline=False)
             await ctx.send(embed=e)
         else:
             await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Erinnerungen.",
@@ -96,6 +104,8 @@ class Erinnerungen(commands.Cog):
     async def removereminder(self, ctx):
         """Erinnerung entfernen
             rufe `,removereminder` auf, und wähle dann den Index der zu entfernenden Erinnerung"""
+        new_reminder = False
+        guild = self.bot.get_guild(config.SERVER_ID)
         reminder = getReminder()
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
@@ -104,8 +114,18 @@ class Erinnerungen(commands.Cog):
             reminderCount = len(reminder[str(ctx.author.id)])
             for i in range(reminderCount):
                 singleReminder = reminder[str(ctx.author.id)][i]
-                e.add_field(name=f"[{i}] {singleReminder[0]}",
-                            value=singleReminder[1], inline=False)
+                # new
+                if singleReminder[0] == "{":
+                    new_reminder = True
+                    rem = Reminder(r=singleReminder)
+                    mentions = ' '.join([guild.get_role(role).mention for role in rem.roles])
+                    mentions += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
+                    e.add_field(name=f"[{i}] {rem.date}",
+                                value=mentions + "\n" + rem.message, inline=False)
+                #old
+                else:
+                    e.add_field(name=f"[{i}] {singleReminder[0]}",
+                                value=singleReminder[1], inline=False)
 
             await ctx.send(embed=e)
             await ctx.send(embed=simple_embed(ctx.author, "Gebe bitte den Index der Erinnerung ein, die du löschen möchtest.",
@@ -114,10 +134,18 @@ class Erinnerungen(commands.Cog):
                 m = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
                 index = int(m.content)
                 if 0 <= index < reminderCount:
-                    removeReminder(
-                        ctx.author.id, *reminder[str(ctx.author.id)][index])
-                    await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
-                                                                       f"Deine Erinnerung\n```{''.join(reminder[str(ctx.author.id)][index][1].splitlines()[:-1])}``` wurde gelöscht."))
+                    # old
+                    if not new_reminder:
+                        removeReminder(ctx.author.id, *reminder[str(ctx.author.id)][index])
+                        await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
+                                    f"Deine Erinnerung\n```{''.join(reminder[str(ctx.author.id)][index][1].splitlines()[:-1])}``` wurde gelöscht."))
+                    # new
+                    else:
+                        remove_new_reminder(ctx.author.id, rem)
+                        await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
+                        
+                                    f"Deine Erinnerung\n```{rem.message}``` für {mentions} wurde gelöscht."))
+
                 else:
                     raise ValueError
             except futures.TimeoutError:
@@ -174,7 +202,8 @@ class Erinnerungen(commands.Cog):
                         # change reminder date if it is reocurring
                         if rem.reminder_again > 0 or rem.reminder_again == -1:
                             embed.description += f"\n\nDiese Erinnerung wird noch {rem.reminder_again if rem.reminder_again > 0 else 'unendlich'} weitere Male eintreten."
-                            rem.reminder_again -= 1
+                            if rem.reminder_again != -1:
+                                rem.reminder_again -= 1
                             rem.date = (time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
                             embed.description += f"Das nächste Mal ist {rem.date}."
                             add_new_reminder(rem)
@@ -234,7 +263,8 @@ class Erinnerungen(commands.Cog):
         "",
         "(optional, erfordert eine noch anzugebendec Wiederholungszeit)",
         f"{repeat_once_emoji} Erinnerung, die sich eine angegebene Zahl oft wiederholt",
-        f"{repeat_emoji} Erinnerung, die sich bis zum eventuellen Löschen wiederholt"
+        f"{repeat_emoji} Erinnerung, die sich bis zum eventuellen Löschen wiederholt",
+        f"\n{checkmark} ist zum Bestätigen, wenn alles ausgewählt wurde"
         ]
         e.description = '\n'.join(description)
 
@@ -292,17 +322,19 @@ class Erinnerungen(commands.Cog):
         e = simple_embed(ctx.author, "Bitte gebe nun deine Erinnerungszeit ein", color=discord.Color.dark_magenta())
         finished = False
         time = None
+        if time_format == "relative":
+            e.description = "Beispiel: 7d5h2min"
+        elif time_format == "absolute":
+            e.description = "Beispiel: 1.1.2021 11:01"
+        msg = await ctx.send(embed=e)
         while not finished:
             try:
-                if time_format == "relative":
-                    e.description = "Beispiel: 7d5h2min"
-                elif time_format == "absolute":
-                    e.description = "Beispiel: 1.1.2021 11:01"
-                msg = await ctx.send(embed=e)
-
                 m = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=120)
 
                 if time_format == "relative":
+                    if not self.parse_to_timedelta(m.content):
+                        await m.delete()
+                        continue
                     time = self.parse_to_timedelta(m.content)
                     time += datetime.datetime.now()
                 elif time_format == "absolute":

@@ -43,13 +43,13 @@ async def on_command_error(ctx, error):
     if isinstance(error, NotOwner) or isinstance(error, CheckFailure):
         await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red()))
         return
-    embed = discord.Embed(title=repr(error))
+    embed = discord.Embed(title=repr(error)[:256])
     embed.color = discord.Color.red()
     traceback_str = str(''.join(traceback.format_exception(
         etype=type(error), value=error, tb=error.__traceback__)))
     embed.description = f"```{traceback_str}```"
     if len(embed.description) > 2000: 
-        embed.description = f"```{traceback_str[-2000:]}```"
+        embed.description = f"```{traceback_str[-1994:]}```"
 
     await ctx.send(embed=embed)
 

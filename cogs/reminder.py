@@ -201,9 +201,11 @@ class Erinnerungen(commands.Cog):
 
                         # change reminder date if it is reocurring
                         if rem.reminder_again > 0 or rem.reminder_again == -1:
-                            embed.description += f"\n\nDiese Erinnerung wird noch {rem.reminder_again if rem.reminder_again > 0 else 'unendlich'} weitere Male eintreten."
-                            if rem.reminder_again != -1:
+                            if rem.reminder_again > 0:
+                                embed.description += f"\n\nDiese Erinnerung wird noch {(rem.reminder_again + 'weiteres Mal') if rem.reminder_again == 1 else (rem.reminder_again + 'weitere Male')} eintreten."
                                 rem.reminder_again -= 1
+                            else:
+                                embed.description += f"\n\nDiese Erinnerung wird noch unendlich weitere Male eintreten." 
                             rem.date = (time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
                             embed.description += f"Das nächste Mal ist {rem.date}."
                             add_new_reminder(rem)

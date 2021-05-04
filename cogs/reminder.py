@@ -207,7 +207,7 @@ class Erinnerungen(commands.Cog):
                             else:
                                 embed.description += f"\n\nDiese Erinnerung wird noch unendlich weitere Male eintreten." 
                             rem.date = (time + self.parse_to_timedelta(rem.reminder_again_in)).strftime('%d.%m.%Y %H:%M')
-                            embed.description += f"Das nächste Mal ist {rem.date}."
+                            embed.description += f"\nDas nächste Mal ist {rem.date}."
                             add_new_reminder(rem)
                         
                         await channel.send(content=content, embed=embed)

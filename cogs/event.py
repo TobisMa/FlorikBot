@@ -113,11 +113,11 @@ class Event(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def start(self, ctx, *args):
-        self.update_data()
-        self.data = {}
 
         if get_data("event_config")["is_running"]:
             raise EventError("Event läuft schon")
+        self.update_data()
+        self.data = {}
         self.config["is_running"] = True
         self.config["remaining"] = list(self.config["participants"])
 

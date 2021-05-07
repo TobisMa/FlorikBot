@@ -219,7 +219,8 @@ class Utility(commands.Cog):
     @commands.command()
     async def latex(self, ctx, *, arg):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
-        [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
+        [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen),
+        und hier eine ausführlichere und längere [Liste von Zeichen](https://www.caam.rice.edu/~heinken/latex/symbols.pdf)"""
         arg = arg.strip("` ")
         try:
             img = self.latexToImage(arg)

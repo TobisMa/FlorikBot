@@ -221,7 +221,10 @@ class Utility(commands.Cog):
         """Schickt ein Bild, welches dem angegebenen Latex-Code entspricht.
         [Hier ist eine generelle Hilfe](https://de.wikipedia.org/wiki/Hilfe:TeX), [hier ist eine Liste an Sonderzeichen](https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Sonderzeichen)"""
         arg = arg.strip("` ")
-        img = self.latexToImage(arg)
+        try:
+            img = self.latexToImage(arg)
+        except ValueError:
+            await ctx.send(embed=simple_embed("Ungültige Eingabe", color=discord.Color.red()))
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')

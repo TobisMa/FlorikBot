@@ -224,7 +224,7 @@ class Utility(commands.Cog):
         try:
             img = self.latexToImage(arg)
         except ValueError:
-            await ctx.send(embed=simple_embed("Ungültige Eingabe", color=discord.Color.red()))
+            await ctx.send(embed=simple_embed(ctx.author, "Ungültige Eingabe", color=discord.Color.red()))
         # img = img.resize((int(img.width * 2), int(img.height * 2)))#, Image.ANTIALIAS)
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')

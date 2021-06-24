@@ -257,11 +257,18 @@ class Utility(commands.Cog):
             await msg.edit(embed=e)
         
     @commands.command()
-    async def zitat(self, ctx):
+    async def zitat(self, ctx, *args):
+        """Gibt ein zufälliges Zitat aus der Zitatesammlung aus."""
+        if(len(args) > 0 and not args[0].isnumeric()):
+            await ctx.send("Um ein Zitat hinzuzufügen, nutze bitte " + config.PREFIX + "zitate")
         if len(self.quotes) == 0:
             await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
             return
         quote = random.choice(self.quotes)
+        if(len(args) > 0 and args[0].isnumeric()):
+            index = int(args[0])
+            if(index <= len(self.quotes)):
+                quote = self.quotes[index]
         e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
         await ctx.channel.send(embed=e)
         

@@ -269,8 +269,8 @@ class Utility(commands.Cog):
         quote = random.choice(self.quotes)
         if(len(args) > 0 and args[0].isnumeric()):
             index = int(args[0])
-            if(index <= len(self.quotes)):
-                quote = self.quotes[index]
+            if(1 <= index <= len(self.quotes)):
+                quote = self.quotes[index - 1]
         e = simple_embed(ctx.author, "Zufälliges Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
         await ctx.channel.send(embed=e)
         

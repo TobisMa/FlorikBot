@@ -261,7 +261,7 @@ class Utility(commands.Cog):
     async def zitat(self, ctx, *args):
         """Gibt ein zufälliges Zitat aus der Zitatesammlung aus."""
         if(len(args) > 0 and not args[0].isnumeric()):
-            await ctx.send(embed=simple_embed(f"Um ein Zitat hinzuzufügen, nutze bitte {config.PREFIX}zitate", color=discord.Color.red()))
+            await ctx.send(embed=simple_embed(ctx.author, f"Um ein Zitat hinzuzufügen, nutze bitte {config.PREFIX}zitate", color=discord.Color.red()))
             return
         if len(self.quotes) == 0:
             await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))

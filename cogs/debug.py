@@ -10,10 +10,10 @@ class Debug(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def test(self, ctx, *, arg : discord.Member):
-        """Test-command zum debuggen."""
-        await ctx.send(arg.name)
+    # @commands.command()
+    # async def test(self, ctx, *, arg : discord.Member):
+    #     """Test-command zum debuggen."""
+    #     await ctx.send(arg.name)
 
     @commands.command()
     async def emotes(self, ctx):

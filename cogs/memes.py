@@ -335,7 +335,12 @@ class Memes(commands.Cog):
                 await channel.send(embed=e)
 
             else:
-                await channel.send(embed=e, file=await msg.attachments[0].to_file())
+                try:
+                    await channel.send(embed=e, file=await msg.attachments[0].to_file())
+                except Exception as e:
+                    await channel.send(embed=e, file=await msg.attachments[0].url)
+                    await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), e)
+                    
         else:
             if(is_url_image(msg.content)):
                 e.description = e.description.splitlines()[0]

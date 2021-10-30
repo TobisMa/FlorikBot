@@ -1,5 +1,6 @@
 from asyncio import futures
 import discord
+from discord.errors import Forbidden
 from discord.ext import commands
 from discord.ext import tasks
 
@@ -13,7 +14,7 @@ from helper_functions import *
 from bot import on_command_error
 
 class Reminder():
-    def __init__(self, author = None, date = "", message = "", users = [], roles = [], reminder_again = 0, reminder_again_in = "", r = None):
+    def __init__(self, author = None, date = "", message = "", users = [], roles = [], reminder_again = 0, reminder_again_in = "", is_private=False, r = None):
         if not r:
             self.author = author
             self.date = date
@@ -23,7 +24,8 @@ class Reminder():
             if len(users) == len(roles) == 0:
                 self.users = [author]
             self.reminder_again = reminder_again
-            self.reminder_again_in = reminder_again_in     
+            self.reminder_again_in = reminder_again_in    
+            self.private = is_private 
         else:
             self.__dict__ = json.loads(r)
 
@@ -159,7 +161,7 @@ class Erinnerungen(commands.Cog):
                                                                f"Gebe {self.bot.command_prefix}reminder [Datum], um eine neue Erinnerung zu erstellen oder " +
                                                                f"{self.bot.command_prefix}help reminder ein, um dir die korrekte Syntax des Commandes anzeigen zu lassen."))
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=60)
     async def checkReminder(self):
         r = getReminder()
         now = datetime.datetime.now()
@@ -188,6 +190,12 @@ class Erinnerungen(commands.Cog):
                 # new reminder format
                 except ValueError:
                     rem : Reminder = Reminder(r=reminder)
+                    # not all reminders have this
+                    try:
+                        if rem.private:
+                            channel = self.bot.get_user(rem.users[0])
+                    except:
+                        pass
                     time = datetime.datetime.strptime(rem.date, '%d.%m.%Y %H:%M')
                     if time <= now:
                         guild = self.bot.get_guild(config.SERVER_ID)
@@ -256,6 +264,7 @@ class Erinnerungen(commands.Cog):
         calendar_emoji = "\N{CALENDAR}"
         repeat_emoji = "\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}"
         repeat_once_emoji = "\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS WITH CIRCLED ONE OVERLAY}"
+        private_emoji = "\N{lock}"
         checkmark = "\N{White Heavy Check Mark}"
 
         e = simple_embed(ctx.author, "Neue Erinnerung", color=discord.Color.dark_magenta())
@@ -263,10 +272,13 @@ class Erinnerungen(commands.Cog):
         f"{clock_emoji} relative Zeitangabe (5min)",
         f"{calendar_emoji} absolute Zeitangabe (1.1.2021 11:01)",
         "",
-        "(optional, erfordert eine noch anzugebendec Wiederholungszeit)",
+        "(optional, erfordert eine noch anzugebende Wiederholungszeit)",
         f"{repeat_once_emoji} Erinnerung, die sich eine angegebene Zahl oft wiederholt",
         f"{repeat_emoji} Erinnerung, die sich bis zum eventuellen Löschen wiederholt",
-        f"\n{checkmark} ist zum Bestätigen, wenn alles ausgewählt wurde"
+        "",
+        f"{private_emoji} wird in die discord DM's und nicht in den Server geschickt",
+        "",
+        f"{checkmark} ist zum Bestätigen, wenn alles ausgewählt wurde"
         ]
         e.description = '\n'.join(description)
 
@@ -275,10 +287,12 @@ class Erinnerungen(commands.Cog):
         await msg.add_reaction(calendar_emoji)
         await msg.add_reaction(repeat_once_emoji)
         await msg.add_reaction(repeat_emoji)
+        await msg.add_reaction(private_emoji)
         await msg.add_reaction(checkmark)
 
         time_format = ""
         repeat = 0
+        is_private = False
         # reminder configuration
         finished = False
         while not finished:
@@ -306,6 +320,13 @@ class Erinnerungen(commands.Cog):
                     description[6] = f"__{description[6]}__"
                     description[5] = description[5].strip("_")
 
+                elif r.emoji == private_emoji:
+                    is_private = not is_private
+                    description[8] = description[8].strip("_")
+                    if is_private:
+                        description[8] = f"__{description[8]}__"
+
+
                 elif r.emoji == checkmark:
                     if time_format != "":
                         finished = True
@@ -313,8 +334,10 @@ class Erinnerungen(commands.Cog):
                         await msg.edit(embed=e)
                 e.description = '\n'.join(description)
                 await msg.edit(embed=e)
-                await r.remove(u)
-
+                try:
+                    await r.remove(u)
+                except Forbidden:
+                    pass
             except futures.TimeoutError:
                 e.color = discord.Color.red()
                 await msg.edit(embed=e)
@@ -393,28 +416,32 @@ class Erinnerungen(commands.Cog):
                 return
 
         # who to mention
-        e = simple_embed(ctx.author,
-            "Bitte @erwähne nun alle Personen / Rollen, für die die Erinnerung sein soll", 
-            "Im Falle von nur dir selbst nur dich selbst oder irgendeine Nachricht ohne Erwähnungen.",
-            color=discord.Color.dark_magenta()
-            )
-        msg = await ctx.send(embed=e)
-        try:
-            m = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=120)
-            users = m.raw_mentions
-            roles = m.raw_role_mentions
-            e.color = discord.Color.green()
-            e.description += "\n"
-            if len(users) == len(roles) == 0:
-                users.append(ctx.author.id)
-            e.description += "Erwähnte Benutzer: " + ''.join([f"<@{user_id}>" for user_id in users])
-            e.description += "\nErwähnte Rollen: " + ''.join([role.mention for role in m.role_mentions])
-            await msg.edit(embed=e)
-        except futures.TimeoutError:
-            e.color = discord.Color.red()
-            await msg.edit(embed=e)
-            return
-        
+        if not is_private:
+            e = simple_embed(ctx.author,
+                "Bitte @erwähne nun alle Personen / Rollen, für die die Erinnerung sein soll", 
+                "Im Falle von nur dir selbst nur dich selbst oder irgendeine Nachricht ohne Erwähnungen.",
+                color=discord.Color.dark_magenta()
+                )
+            msg = await ctx.send(embed=e)
+            try:
+                m = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=120)
+                users = m.raw_mentions
+                roles = m.raw_role_mentions
+                e.color = discord.Color.green()
+                e.description += "\n"
+                if len(users) == len(roles) == 0:
+                    users.append(ctx.author.id)
+                e.description += "Erwähnte Benutzer: " + ''.join([f"<@{user_id}>" for user_id in users])
+                e.description += "\nErwähnte Rollen: " + ''.join([role.mention for role in m.role_mentions])
+                await msg.edit(embed=e)
+            except futures.TimeoutError:
+                e.color = discord.Color.red()
+                await msg.edit(embed=e)
+                return
+        else:
+            users = [ctx.author.id]
+            roles = []
+
         # what the reminder message is
         e = simple_embed(ctx.author,
             "Zum Abschluss sollte nun noch die Erinnerungsnachricht angegeben werden.", 
@@ -432,9 +459,9 @@ class Erinnerungen(commands.Cog):
             return
 
         if repeat != 0:
-            r = Reminder(ctx.author.id, time, reminder_message, users, roles, repeat, reminder_again_after)
+            r = Reminder(ctx.author.id, time, reminder_message, users, roles, repeat, reminder_again_after, is_private)
         else:
-            r = Reminder(ctx.author.id, time, reminder_message, users, roles)
+            r = Reminder(ctx.author.id, time, reminder_message, users, roles, is_private=is_private)
         e = simple_embed(ctx.author, f"Glückwunsch, deine Erinnerung für {time} wurde erfolgreich gespeichert.")
         await ctx.send(embed=e)
         add_new_reminder(r)        

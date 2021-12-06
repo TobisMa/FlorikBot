@@ -166,9 +166,9 @@ class Erinnerungen(commands.Cog):
         r = getReminder()
         now = datetime.datetime.now()
         recipients = list(r.keys())
-        channel = self.bot.get_channel(config.BOT_CHANNEL_ID)
         for recipientID in recipients:
             for reminder in r[recipientID]:
+                channel = self.bot.get_channel(config.BOT_CHANNEL_ID)
                 # old reminder format
                 try:
                     time = datetime.datetime.strptime(
@@ -194,8 +194,6 @@ class Erinnerungen(commands.Cog):
                     try:
                         if rem.private:
                             channel = self.bot.get_user(rem.users[0])
-                        else:
-                            self.bot.get_channel(config.BOT_CHANNEL_ID)
                     except:
                         pass
                     time = datetime.datetime.strptime(rem.date, '%d.%m.%Y %H:%M')

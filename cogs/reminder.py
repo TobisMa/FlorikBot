@@ -191,8 +191,8 @@ class Erinnerungen(commands.Cog):
                 except ValueError:
                     rem : Reminder = Reminder(r=reminder)
                     # not all reminders have this
-                    await self.bot.get_channel(config["LOG_CHANNEL_ID"]).send(str(rem.__dict__))
-                    await self.bot.get_channel(config["LOG_CHANNEL_ID"]).send("wtf")
+                    await self.bot.get_channel(config.LOG_CHANNEL_ID).send(str(rem.__dict__))
+                    await self.bot.get_channel(config.LOG_CHANNEL_ID).send("wtf")
                     try:
                         if rem.private:
                             channel = self.bot.get_user(rem.users[0])

@@ -191,11 +191,11 @@ class Erinnerungen(commands.Cog):
                 except ValueError:
                     rem : Reminder = Reminder(r=reminder)
                     # not all reminders have this
-                    await self.bot.get_channel(config.LOG_CHANNEL_ID).send(str(rem.__dict__))
-                    await self.bot.get_channel(config.LOG_CHANNEL_ID).send("wtf")
                     try:
                         if rem.private:
                             channel = self.bot.get_user(rem.users[0])
+                        else:
+                            self.bot.get_channel(config.BOT_CHANNEL_ID)
                     except:
                         pass
                     time = datetime.datetime.strptime(rem.date, '%d.%m.%Y %H:%M')

@@ -31,7 +31,7 @@ class Nachrichten(commands.Cog):
         embed_list = []
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as r:
-                if r.status == 200:
+                if r.status == 200 and len(await r.text()) > 0:
                     data = json.loads(await r.text())
                     data["news"].reverse()
                     for news in data["news"]:

@@ -55,7 +55,7 @@ class Erinnerungen(commands.Cog):
         except ValueError:
             await ctx.send(embed=simple_embed(ctx.author, "Dein Datum ist so nicht zulässig.", "Das Format sollte so aussehen:\n```reminder (d)d.(m)m.yyyy (h)h:(m)m\nBeispiel: reminder 1.10.2020 6:34```", color=discord.Color.red()))
             return
-        except futures.TimeoutError:
+        except asyncio.exceptions.TimeoutError:
             await ctx.send(embed=simple_embed(ctx.author, "Die Zeit ist abgelaufen.", "Bitte versuche es erneut, falls du eine Erinnerung erstellen möchtest.", color=discord.Color.red()))
             return
         except Exception:
@@ -85,7 +85,7 @@ class Erinnerungen(commands.Cog):
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
                               timestamp=datetime.datetime.utcnow())
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             for singleReminder in reminder[str(ctx.author.id)]:
                 # new
                 if singleReminder[0] == "{":
@@ -112,7 +112,7 @@ class Erinnerungen(commands.Cog):
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
                               timestamp=datetime.datetime.utcnow())
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             reminderCount = len(reminder[str(ctx.author.id)])
             for i in range(reminderCount):
                 singleReminder = reminder[str(ctx.author.id)][i]
@@ -150,7 +150,7 @@ class Erinnerungen(commands.Cog):
 
                 else:
                     raise ValueError
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 await ctx.send(embed=simple_embed(ctx.author, "Die Zeit ist abgelaufen.",
                                                                    "Bitte versuche es erneut, falls du eine Erinnerung löschen möchtest.", color=discord.Color.red()))
             except ValueError:
@@ -338,7 +338,7 @@ class Erinnerungen(commands.Cog):
                     await r.remove(u)
                 except Forbidden:
                     pass
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 e.color = discord.Color.red()
                 await msg.edit(embed=e)
                 return
@@ -375,7 +375,7 @@ class Erinnerungen(commands.Cog):
                 e.color = discord.Color.green()
                 await msg.edit(embed=e)
                 finished = True
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 e.color = discord.Color.red()
                 await msg.edit(embed=e)
                 return
@@ -396,7 +396,7 @@ class Erinnerungen(commands.Cog):
                     e.color = discord.Color.green()
                     await msg.edit(embed=e)
                     finished = True
-                except futures.TimeoutError:
+                except asyncio.exceptions.TimeoutError:
                     e.color = discord.Color.red()
                     await msg.edit(embed=e)
                     return
@@ -410,7 +410,7 @@ class Erinnerungen(commands.Cog):
                 repeat = int(m.content)
                 e.color = discord.Color.green()
                 await msg.edit(embed=e)
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 e.color = discord.Color.red()
                 await msg.edit(embed=e)
                 return
@@ -434,7 +434,7 @@ class Erinnerungen(commands.Cog):
                 e.description += "Erwähnte Benutzer: " + ''.join([f"<@{user_id}>" for user_id in users])
                 e.description += "\nErwähnte Rollen: " + ''.join([role.mention for role in m.role_mentions])
                 await msg.edit(embed=e)
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 e.color = discord.Color.red()
                 await msg.edit(embed=e)
                 return
@@ -453,7 +453,7 @@ class Erinnerungen(commands.Cog):
             reminder_message = m.content
             e.color = discord.Color.green()
             await msg.edit(embed=e)
-        except futures.TimeoutError:
+        except asyncio.exceptions.TimeoutError:
             e.color = discord.Color.red()
             await msg.edit(embed=e)
             return
@@ -512,5 +512,5 @@ def removeReminder(recipientID, time, message, author):
     updateReminder(reminder)
 
 
-def setup(bot):
-    bot.add_cog(Erinnerungen(bot))
+async def setup(bot):
+    await bot.add_cog(Erinnerungen(bot))

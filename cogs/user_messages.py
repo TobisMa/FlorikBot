@@ -103,5 +103,5 @@ class UserMessages(commands.Cog):
             file.close()
         self.data = js
 
-def setup(bot):
-    bot.add_cog(UserMessages(bot))
+async def setup(bot):
+    await bot.add_cog(UserMessages(bot))

@@ -1,6 +1,5 @@
 from asyncio import futures
 import discord
-from discord.embeds import _EmptyEmbed
 from discord.ext import commands
 
 import asyncio
@@ -33,8 +32,8 @@ class Memes(commands.Cog):
     #     e = discord.Embed()
     #     e.color = discord.Color.purple()
     #     e.timestamp = datetime.datetime.utcnow()
-    #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
-    #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+    #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
+    #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar)
     #     if not len(voteList) > 0:
     #         e.title = "Gerade eben sind keine Memes vorhanden."
     #         await ctx.send(embed=e)
@@ -69,13 +68,13 @@ class Memes(commands.Cog):
             if(len(winnerMessage.attachments) > 0):
                 e.set_image(url=winnerMessage.attachments[0].url)
             e.set_author(name=winnerMessage.author,
-                         icon_url=winnerMessage.author.avatar_url)
+                         icon_url=winnerMessage.author.avatar)
             e.color = winnerMessage.guild.get_member(
                 winnerMessage.author.id).colour
             date = winnerMessage.created_at
             e.description += "\n" + winnerMessage.content
             e.timestamp = datetime.datetime.utcnow()
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             await ctx.message.channel.send(embed=e)
             if(len(winnerMessage.attachments) > 0):
                 if(not is_url_image(e.image.url)):
@@ -152,7 +151,7 @@ class Memes(commands.Cog):
 
             e = discord.Embed(title="Stats", color=ctx.author.color,
                               timestamp=datetime.datetime.utcnow())
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
             for member_id in members.keys():
                 if len(ctx.message.mentions) > 0:
@@ -221,7 +220,7 @@ class Memes(commands.Cog):
             reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == message.author and _reaction.emoji == cross and _reaction.message == message)
             await message.clear_reaction(up)
             await message.clear_reaction(down)
-        except asyncio.TimeoutError:
+        except asyncio.exceptions.TimeoutError:
             pass
         try:
             await message.clear_reaction(cross)
@@ -256,7 +255,7 @@ class Memes(commands.Cog):
                 await errormsg.add_reaction(deleteEmoji)
                 try:
                     reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == user and _reaction.emoji == deleteEmoji)
-                except futures.TimeoutError:
+                except asyncio.exceptions.TimeoutError:
                     pass
                 await errormsg.delete()
                 return
@@ -313,19 +312,19 @@ class Memes(commands.Cog):
             m = await c.fetch_message(msg.reference.message_id)
             e.description += f"[Bezieht sich auf ...]({m.jump_url})\n"
         e.set_author(name=msg.author,
-                     icon_url=msg.author.avatar_url)
+                     icon_url=msg.author.avatar)
         e.color = msg.guild.get_member(
             msg.author.id).colour
         e.description += "\n" + msg.content
         e.timestamp = msg.created_at
-        e.set_footer(text=msg.author.name, icon_url=msg.author.avatar_url)
+        e.set_footer(text=msg.author.name, icon_url=msg.author.avatar)
 
         if(len(msg.attachments) > 0):
             if(is_url_image(msg.attachments[0].url)):
                 e.set_image(url=msg.attachments[0].url)
 
                 counter = 0
-                while isinstance(e.image, _EmptyEmbed) or e.image.width == 0 and counter < 100:
+                while isinstance(e.image, None) or e.image.width == 0 and counter < 100:
                     counter += 1
                     e.set_image(url=msg.attachments[0].url)
                 if counter == 100:
@@ -390,5 +389,5 @@ def deleteOldMessages():
     updateVoteListFile(voteList)
 
 
-def setup(bot):
-    bot.add_cog(Memes(bot))
+async def setup(bot):
+    await bot.add_cog(Memes(bot))

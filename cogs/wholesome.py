@@ -70,7 +70,7 @@ class Wholesome(commands.Cog):
         e = discord.Embed(title=f"**{arg.display_name}**, du wurdest von **{ctx.author.display_name}** {verb}", description=cat_ascii)
         e.timestamp = datetime.datetime.utcnow()
         e.color = ctx.author.color
-        e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
         gifs = self.readJson(command)
         r = random.randint(0, 25 + len(gifs))
@@ -153,5 +153,5 @@ class Wholesome(commands.Cog):
         embed.color = discord.Color.red()
         await ctx.send(embed=embed)
 
-def setup(bot):
-    bot.add_cog(Wholesome(bot))
+async def setup(bot):
+    await bot.add_cog(Wholesome(bot))

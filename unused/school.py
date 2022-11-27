@@ -104,7 +104,7 @@ class Schule(commands.Cog):
             title="Dein persönlicher Vertretungsplan: ", color=ctx.author.color)
         embed.description = "`Stunde Art Kurs Lehrer Raum Bemerkungen`"
         embed.timestamp = datetime.datetime.utcnow()
-        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
         courses = getMyCourseRoleNames(ctx.author)
 
         e = format_plan(plan, ctx.guild, embed, courses)

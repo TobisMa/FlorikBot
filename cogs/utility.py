@@ -21,7 +21,7 @@ from cogs.debug import *
 from cogs.memes import *
 from cogs.music import *
 from cogs.reminder import *
-from cogs.school import *
+from unused.school import *
 from cogs.user_messages import *
 from cogs.utility import *
 from cogs.wholesome import *
@@ -60,7 +60,7 @@ class Utility(commands.Cog):
     @commands.command()
     async def pfpart(self, ctx, big: typing.Optional[bool] = False):
         """Zeigt dein Discord-Profilbild in ASCII-Art"""
-        bites = await ctx.author.avatar_url.read()
+        bites = await ctx.author.avatar.read()
         # im = Image.frombytes("RGB", (125, 125), bites, "raw")
         im = Image.open(io.BytesIO(bites))
         r = im.convert('1')
@@ -321,5 +321,5 @@ class Utility(commands.Cog):
 
 
 
-def setup(bot):
-    bot.add_cog(Utility(bot))
+async def setup(bot):
+    await bot.add_cog(Utility(bot))

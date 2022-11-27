@@ -3,6 +3,7 @@ https://discord.com/api/oauth2/authorize?client_id=760125323580276757&permission
 '''
 
 from asyncio import futures
+import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CheckFailure, CommandNotFound, NotOwner
@@ -20,8 +21,6 @@ intents.presences = True
 bot = commands.Bot(command_prefix=config.PREFIX, intents=intents)
 bot.owner_ids = config.OWNER_IDS
 
-
-
 @bot.event
 async def on_error(event, *args, **kwargs):
     embed = discord.Embed(title=f'new Error in event {event}()')
@@ -30,7 +29,8 @@ async def on_error(event, *args, **kwargs):
     embed.set_footer(text=kwargs)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=embed)
-
+    # Florian war hier
+    
 @bot.event
 async def on_command_error(ctx, error):
     # if this is not manually called with a textchannel as ctx and the ctx has no own error handler 
@@ -45,8 +45,7 @@ async def on_command_error(ctx, error):
         return
     embed = discord.Embed(title=repr(error)[:256])
     embed.color = discord.Color.red()
-    traceback_str = str(''.join(traceback.format_exception(
-        etype=type(error), value=error, tb=error.__traceback__)))
+    traceback_str = str(''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__)))
     embed.description = f"```{traceback_str}```"
     if len(embed.description) > 2000: 
         embed.description = f"```{traceback_str[-1994:]}```"
@@ -62,7 +61,7 @@ async def on_ready():
     e = discord.Embed(title="Bot started")
     e.color = discord.Color.blurple()
     e.timestamp = datetime.datetime.utcnow()
-    e.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+    e.set_footer(text=bot.user.name, icon_url=bot.user.avatar)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=e)
 
@@ -99,7 +98,7 @@ class HelpCommand(commands.HelpCommand):
         cmdhelp = command.help if command.help != None else " - "
         e.description = f"```{' | '.join(command.aliases)}```" + \
             cmdhelp if len(command.aliases) > 0 else cmdhelp
-        e.set_footer(icon_url=self.context.author.avatar_url)
+        e.set_footer(icon_url=self.context.author.avatar)
         e.timestamp = datetime.datetime.utcnow()
 
         if not await self.can_run_cmd(command):
@@ -134,7 +133,6 @@ class HelpCommand(commands.HelpCommand):
                     if pages[i][0] == page.qualified_name][0]
 
         page_count = len(pages)
-
         e.title = pages[page][0]
         e.description = pages[page][1]
 
@@ -142,7 +140,7 @@ class HelpCommand(commands.HelpCommand):
             e.add_field(name=f"{cmd.name} \n< {' | '.join(cmd.aliases)} >" if len(cmd.aliases) > 0 else cmd.name + "\n<>",
                         value=cmd.short_doc if cmd.short_doc != '' else " - ")
         e.set_footer(text=f"{page + 1} / {page_count}",
-                     icon_url=ctx.author.avatar_url)
+                     icon_url=ctx.author.avatar)
 
         e.timestamp = datetime.datetime.utcnow()
         msg = await destination.send(embed=e)
@@ -167,48 +165,44 @@ class HelpCommand(commands.HelpCommand):
                     e.add_field(name=f"{cmd.name} \n< {' | '.join(cmd.aliases)} >" if len(cmd.aliases) > 0 else cmd.name + "\n<>",
                                 value=cmd.short_doc if cmd.short_doc != '' else " - ")
                 e.set_footer(text=f"{page + 1} / {page_count}",
-                             icon_url=ctx.author.avatar_url)
+                             icon_url=ctx.author.avatar)
                 await msg.edit(embed=e)
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 active = False
         e.color = discord.Color.orange()
         await msg.edit(embed=e)
 
 
-class ServerRules(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+# class ServerRules(commands.Cog):
+#     def __init__(self, bot):
+#         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_guild_update(self, before, after):
-        if after.id == 693062821650497597:
-            if after.name != "Mujika-Kult":
-                await after.edit(name="Mujika-Kult")
+#     @commands.Cog.listener()
+#     async def on_guild_update(self, before, after):
+#         if after.id == 693062821650497597:
+#             if after.name != "Mujika-Kult":
+#                 await after.edit(name="Mujika-Kult")
 
-    @commands.Cog.listener()
-    async def on_message(author, message):
-        if message.channel.id == 804652343428644874 and not message.author.id in config.wortspielAllowedUserIds:
-            await message.delete()
+#     @commands.Cog.listener()
+#     async def on_message(author, message):
+#         if message.channel.id == 804652343428644874 and not message.author.id in config.wortspielAllowedUserIds:
+#             await message.delete()
 
+# bot.add_cog(ServerRules(bot))
+async def main():
+    async with bot:
+        await bot.load_extension("cogs.reminder")
+        await bot.load_extension("cogs.user_messages")
+        await bot.load_extension("cogs.wholesome")
+        await bot.load_extension("cogs.utility")
+        await bot.load_extension("cogs.memes")
 
-bot.load_extension("cogs.reminder")
-bot.load_extension("cogs.user_messages")
-bot.load_extension("cogs.wholesome")
-bot.load_extension("cogs.utility")
-bot.load_extension("cogs.memes")
-# bot.load_extension("cogs.school")
-# bot.load_extension("cogs.moodle")
-bot.load_extension("cogs.debug")
-bot.load_extension("cogs.music")
-bot.load_extension("cogs.event")
-bot.load_extension("cogs.news")
-bot.load_extension("cogs.chess")
+        await bot.load_extension("cogs.news")
+        await bot.load_extension("cogs.debug")
+        await bot.load_extension("cogs.music")
+        
+        bot.help_command = HelpCommand()
+        await bot.start(config.TOKEN, reconnect=True)
 
-# bot.load_extension("cogs.scraper")
-
-bot.add_cog(ServerRules(bot))
-
-
-bot.help_command = HelpCommand()
-
-bot.run(config.TOKEN)
+if __name__ == "__main__":
+    asyncio.run(main())

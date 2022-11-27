@@ -3,7 +3,6 @@ from discord import embeds
 from discord.ext import commands
 from discord.ext import tasks
 
-import asyncio
 import datetime
 import json
 import aiohttp
@@ -86,5 +85,5 @@ class Nachrichten(commands.Cog):
         await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), error)
 
 
-def setup(bot):
-    bot.add_cog(Nachrichten(bot))
+async def setup(bot):
+    await bot.add_cog(Nachrichten(bot))

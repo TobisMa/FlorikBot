@@ -30,6 +30,6 @@ def simple_embed(author, title, description = "", image_url="", color=discord.Co
         e.set_image(url=image_url)
     e.color = color
     e.timestamp = datetime.datetime.utcnow()
-    e.set_footer(text=author.name, icon_url=author.avatar_url) 
+    e.set_footer(text=author.name, icon_url=author.avatar) 
     return e
 

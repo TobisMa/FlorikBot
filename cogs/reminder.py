@@ -10,11 +10,16 @@ import json
 import re
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 from bot import on_command_error
 
 class Reminder():
-    def __init__(self, author = None, date = "", message = "", users = [], roles = [], reminder_again = 0, reminder_again_in = "", is_private=False, r = None):
+    def __init__(self, author = None, date = "", message = "", users = None, roles = None, reminder_again = 0, reminder_again_in = "", is_private=False, r = None):
+        if users is None:
+            users = []
+        if roles is None:
+            roles = []
+            
         if not r:
             self.author = author
             self.date = date
@@ -83,19 +88,22 @@ class Erinnerungen(commands.Cog):
         reminder = getReminder()
         guild = self.bot.get_guild(config.SERVER_ID)
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
-            e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+            e = discord.Embed(
+                title="Deine Erinnerungen", 
+                color=ctx.author.color,
+                timestamp=datetime.datetime.utcnow()
+            )
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
-            for singleReminder in reminder[str(ctx.author.id)]:
+            for single_reminder in reminder[str(ctx.author.id)]:
                 # new
-                if singleReminder[0] == "{":
-                    rem = Reminder(r=singleReminder)
+                if single_reminder[0] == "{":
+                    rem = Reminder(r=single_reminder)
                     mentions = ' '.join([guild.get_role(role).mention for role in rem.roles])
                     mentions += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
                     e.add_field(name=rem.date, value=mentions + "\n" + rem.message, inline=False)
                 #old
                 else:
-                    e.add_field(name=singleReminder[0], value=singleReminder[1], inline=False)
+                    e.add_field(name=single_reminder[0], value=single_reminder[1], inline=False)
             await ctx.send(embed=e)
         else:
             await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Erinnerungen.",
@@ -110,24 +118,27 @@ class Erinnerungen(commands.Cog):
         guild = self.bot.get_guild(config.SERVER_ID)
         reminder = getReminder()
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
-            e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+            e = discord.Embed(
+                title="Deine Erinnerungen", 
+                color=ctx.author.color,
+                timestamp=datetime.datetime.utcnow()
+            )
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
-            reminderCount = len(reminder[str(ctx.author.id)])
-            for i in range(reminderCount):
-                singleReminder = reminder[str(ctx.author.id)][i]
+            reminder_count = len(reminder[str(ctx.author.id)])
+            for i in range(reminder_count):
+                single_reminder = reminder[str(ctx.author.id)][i]
                 # new
-                if singleReminder[0] == "{":
+                if single_reminder[0] == "{":
                     new_reminder = True
-                    rem = Reminder(r=singleReminder)
+                    rem = Reminder(r=single_reminder)
                     mentions = ' '.join([guild.get_role(role).mention for role in rem.roles])
                     mentions += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
                     e.add_field(name=f"[{i}] {rem.date}",
                                 value=mentions + "\n" + rem.message, inline=False)
                 #old
                 else:
-                    e.add_field(name=f"[{i}] {singleReminder[0]}",
-                                value=singleReminder[1], inline=False)
+                    e.add_field(name=f"[{i}] {single_reminder[0]}",
+                                value=single_reminder[1], inline=False)
 
             await ctx.send(embed=e)
             await ctx.send(embed=simple_embed(ctx.author, "Gebe bitte den Index der Erinnerung ein, die du löschen möchtest.",
@@ -135,22 +146,21 @@ class Erinnerungen(commands.Cog):
             try:
                 m = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
                 index = int(m.content)
-                if 0 <= index < reminderCount:
-                    # old
-                    if not new_reminder:
-                        removeReminder(ctx.author.id, *reminder[str(ctx.author.id)][index])
-                        await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
-                                    f"Deine Erinnerung\n```{''.join(reminder[str(ctx.author.id)][index][1].splitlines()[:-1])}``` wurde gelöscht."))
-                    # new
-                    else:
-                        remove_new_reminder(ctx.author.id, rem)
-                        await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
-                        
-                                    f"Deine Erinnerung\n```{rem.message}``` für {mentions} wurde gelöscht."))
-
-                else:
+                if not 0 <= index < reminder_count:
                     raise ValueError
-            except asyncio.exceptions.TimeoutError:
+                # old
+                if not new_reminder:
+                    removeReminder(ctx.author.id, *reminder[str(ctx.author.id)][index])
+                    await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
+                                f"Deine Erinnerung\n```{''.join(reminder[str(ctx.author.id)][index][1].splitlines()[:-1])}``` wurde gelöscht."))
+                # new
+                else:
+                    remove_new_reminder(ctx.author.id, rem)
+                    await ctx.send(embed=simple_embed(ctx.author, "Die Erinnerung wurde erfolgreich gelöscht.",
+
+                                f"Deine Erinnerung\n```{rem.message}``` für {mentions} wurde gelöscht."))
+
+            except asyncio.TimeoutError:
                 await ctx.send(embed=simple_embed(ctx.author, "Die Zeit ist abgelaufen.",
                                                                    "Bitte versuche es erneut, falls du eine Erinnerung löschen möchtest.", color=discord.Color.red()))
             except ValueError:
@@ -166,8 +176,8 @@ class Erinnerungen(commands.Cog):
         r = getReminder()
         now = datetime.datetime.now()
         recipients = list(r.keys())
-        for recipientID in recipients:
-            for reminder in r[recipientID]:
+        for recipient_id in recipients:
+            for reminder in r[recipient_id]:
                 channel = self.bot.get_channel(config.BOT_CHANNEL_ID)
                 # old reminder format
                 try:
@@ -177,15 +187,15 @@ class Erinnerungen(commands.Cog):
                         author = self.bot.get_guild(
                             config.SERVER_ID).get_member(int(reminder[2]))
                         recipient = self.bot.get_guild(
-                            config.SERVER_ID).get_member(int(recipientID))
-                        if recipient == None:
+                            config.SERVER_ID).get_member(int(recipient_id))
+                        if recipient is None:
                             recipient = self.bot.get_guild(
-                                config.SERVER_ID).get_role(int(recipientID))
-                        if recipient == None:
+                                config.SERVER_ID).get_role(int(recipient_id))
+                        if recipient is None:
                             return
                         color = recipient.color
                         await channel.send(content=recipient.mention, embed=simple_embed(author, "Erinnerung", reminder[1], color=color))
-                        removeReminder(recipientID, *reminder)
+                        removeReminder(recipient_id, *reminder)
                 
                 # new reminder format
                 except ValueError:

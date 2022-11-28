@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import datetime
-from helper_functions import *
 
 
 class Debug(commands.Cog):
@@ -24,7 +23,7 @@ class Debug(commands.Cog):
         e = discord.Embed(title="Emotes:")
         emotes = [f"<:{e.name}:{e.id}>" for e in self.bot.emojis]
         e.description = ''.join(emotes)
-        e.timestamp = datetime.datetime.utcnow()
+        e.timestamp = discord.utils.utcnow()
         e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
         m = await ctx.send(embed=e)
         # for i in range(min(20, len(emotes))):

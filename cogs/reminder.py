@@ -84,7 +84,7 @@ class Erinnerungen(commands.Cog):
         guild = self.bot.get_guild(config.SERVER_ID)
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+                              timestamp=datetime.datetime.now())
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             for singleReminder in reminder[str(ctx.author.id)]:
                 # new
@@ -111,7 +111,7 @@ class Erinnerungen(commands.Cog):
         reminder = getReminder()
         if str(ctx.author.id) in list(reminder.keys()) and len(reminder[str(ctx.author.id)]) > 0:
             e = discord.Embed(title="Deine Erinnerungen", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+                              timestamp=datetime.datetime.now())
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             reminderCount = len(reminder[str(ctx.author.id)])
             for i in range(reminderCount):

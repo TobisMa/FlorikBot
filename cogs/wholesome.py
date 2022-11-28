@@ -68,7 +68,7 @@ class Wholesome(commands.Cog):
             return
         
         e = discord.Embed(title=f"**{arg.display_name}**, du wurdest von **{ctx.author.display_name}** {verb}", description=cat_ascii)
-        e.timestamp = datetime.datetime.utcnow()
+        e.timestamp = datetime.datetime.now()
         e.color = ctx.author.color
         e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 

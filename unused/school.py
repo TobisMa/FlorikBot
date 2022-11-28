@@ -103,7 +103,7 @@ class Schule(commands.Cog):
         embed = discord.Embed(
             title="Dein persönlicher Vertretungsplan: ", color=ctx.author.color)
         embed.description = "`Stunde Art Kurs Lehrer Raum Bemerkungen`"
-        embed.timestamp = datetime.datetime.utcnow()
+        embed.timestamp = datetime.datetime.now()
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
         courses = getMyCourseRoleNames(ctx.author)
 
@@ -139,8 +139,8 @@ class Schule(commands.Cog):
             rmEmbed.description = "gelöschte Vertretungen"
             addedEmbed.description = "geänderte Vertretungen"
             server = channel.guild
-            rmEmbed.timestamp = datetime.datetime.utcnow()
-            addedEmbed.timestamp = datetime.datetime.utcnow()
+            rmEmbed.timestamp = datetime.datetime.now()
+            addedEmbed.timestamp = datetime.datetime.now()
             rmEmbed = format_plan(
                 removals, server, rmEmbed)
             addedEmbed = format_plan(

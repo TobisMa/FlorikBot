@@ -31,7 +31,7 @@ class Memes(commands.Cog):
     #     voteList = getVoteList()
     #     e = discord.Embed()
     #     e.color = discord.Color.purple()
-    #     e.timestamp = datetime.datetime.utcnow()
+    #     e.timestamp = datetime.datetime.now()
     #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
     #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar)
     #     if not len(voteList) > 0:
@@ -73,7 +73,7 @@ class Memes(commands.Cog):
                 winnerMessage.author.id).colour
             date = winnerMessage.created_at
             e.description += "\n" + winnerMessage.content
-            e.timestamp = datetime.datetime.utcnow()
+            e.timestamp = datetime.datetime.now()
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             await ctx.message.channel.send(embed=e)
             if(len(winnerMessage.attachments) > 0):
@@ -103,7 +103,7 @@ class Memes(commands.Cog):
         progress = 0
         progressMsg = await ctx.send("`  0% fertig.`")
         last_edited = []
-        start_time = datetime.datetime.utcnow()
+        start_time = datetime.datetime.now()
         async with ctx.channel.typing():
             channel = self.bot.get_channel(config.MEME_CHANNEL_ID)
             upvote = getEmoji(self.bot, config.UPVOTE)
@@ -121,7 +121,7 @@ class Memes(commands.Cog):
                 oldProg = progress
                 progress = round(counter / messageCount * 100)
                 if progress != oldProg:
-                    time_now = datetime.datetime.utcnow()
+                    time_now = datetime.datetime.now()
                     if len(last_edited) >= 5:
                         if (time_now - last_edited[0]).seconds >= 5:
                             await progressMsg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
@@ -145,13 +145,13 @@ class Memes(commands.Cog):
                     if meme:
                         members[m.author.id]["memes"] += 1
             
-            end_time = str(datetime.datetime.utcnow() - start_time)
+            end_time = str(datetime.datetime.now() - start_time)
             # round milliseconds
             end_time = end_time.split(".")[0] + "." + str(round(int(end_time.split(".")[1]), 2)) 
             await progressMsg.edit(content=f"`Bearbeitung in {end_time} abgeschlossen.`")
 
             e = discord.Embed(title="Stats", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+                              timestamp=datetime.datetime.now())
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
             for member_id in members.keys():
@@ -188,7 +188,7 @@ class Memes(commands.Cog):
 
         ## Leaderboard ##
         l = discord.Embed(title="Leaderboard (Up-/Downvote Verhältnis)",
-                          color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
+                          color=discord.Color.gold(), timestamp=datetime.datetime.now())
 
         ratioLeaderboard = []
 

@@ -197,10 +197,12 @@ async def main():
         await bot.load_extension("cogs.utility")
         await bot.load_extension("cogs.memes")
 
+        await bot.load_extension("cogs.uni")
+
         await bot.load_extension("cogs.news")
         await bot.load_extension("cogs.debug")
         await bot.load_extension("cogs.music")
-        
+
         bot.help_command = HelpCommand()
         await bot.start(config.TOKEN, reconnect=True)
 

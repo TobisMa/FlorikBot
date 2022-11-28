@@ -25,7 +25,7 @@ from unused.school import *
 from cogs.user_messages import *
 from cogs.utility import *
 from cogs.wholesome import *
-
+from cogs.uni import *
 
 _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\usepackage{{mathtools}}

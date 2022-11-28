@@ -85,7 +85,7 @@ class Memes(commands.Cog):
     @is_private_server()
     @commands.command()
     async def stats(self, ctx, *args):
-        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus
+        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus.
             Dies wird aufgrund von discord rate limits lange dauern.
             Für jeden Nutzer werden Anzahl Memes, Anzahl upvotes/downvotes, upvote/downvote-Verhältnis sowie durchschnittliche upvotes/downvotes aufgelistet.
             \nAls optionale Parameter können zuerst Limit des Durchsuchens, dann auszuwertende Nutzer angegeben werden.
@@ -112,7 +112,8 @@ class Memes(commands.Cog):
             limit = None
             if len(args) > 0 and args[0].isnumeric():
                 limit = int(args[0])
-            messageCount = limit if limit != None else len(await channel.history(limit=None).flatten())
+            messageCount = limit if limit != None else len([a async for a in await channel.history(limit=None)])
+            
             counter = 0
             async for m in channel.history(limit=limit):
                 counter += 1
@@ -133,7 +134,7 @@ class Memes(commands.Cog):
                 if len(m.reactions) > 0:
                     meme = False
                     for r in m.reactions:
-                        voters = await r.users().flatten()
+                        voters = [a async for a in r.users()]
                         count = r.count - 1 if self.bot.user in voters else r.count
                         if r.emoji == upvote:
                             members[m.author.id]["up"] += count

@@ -28,7 +28,7 @@ class Uni(commands.Cog):
     async def vorlesungsstand(self, ctx, *args):
         """Aktualisiert den Vorlesungsstand eines angegebenen Faches.
         Beispiel: `vls LA1 3.2.2 3.3` setzt den aktuellen Stand auf 3.3 und speichert, dass heute 3.2.2 bis 3.3 behandelt wurden.
-        Möglichkeiten, den Befehl anzuwenden: \n``vls LA1 3.3``\n``vls LA1 3.2.2 3.3``\n``vls LA1 3.2.2 3.3 28.11.2022`v
+        Möglichkeiten, den Befehl anzuwenden: \n``vls LA1 3.3``\n``vls LA1 3.2.2 3.3``\n``vls LA1 3.2.2 3.3 28.11.2022`
         """
  
         if not 2 <= len(args) <= 4:
@@ -120,7 +120,7 @@ class Uni(commands.Cog):
         await self.updateMessage()
         await ctx.send(embed=simple_embed(ctx.author, f"Das Fach ``{subject}`` wurde erfolgreich hinzugefügt.", color=discord.Color.green()))
 
-    @is_bot_dev()
+    @is_in_uni_server()
     @commands.command(aliases=["vlsmsg"])
     async def vlsInformation(self, ctx):
         """Setzt den aktuellen Kanal als Vorlesungsstand-Informations-Kanal."""

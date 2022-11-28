@@ -65,6 +65,8 @@ class Uni(commands.Cog):
         )
         await self.updateMessage()
         updateData(self.data)
+        await ctx.message.add_reaction("\N{White Heavy Check Mark}")
+        
 
     def findLastEnd(self, subject):
         if "subjects" not in self.data.keys() or subject not in self.data["subjects"]:
@@ -93,7 +95,7 @@ class Uni(commands.Cog):
             for subject in self.data["subjects"]:
                 current = self.data['subjects'][subject]['current']
                 timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
-                description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n"
+                description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
             e.description = description
             await msg.edit(embed=e)
         pass

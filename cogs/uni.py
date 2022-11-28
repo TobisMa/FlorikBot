@@ -27,24 +27,34 @@ class Uni(commands.Cog):
     @commands.command(aliases=["vls"])
     async def vorlesungsstand(self, ctx, *args):
         """Aktualisiert den Vorlesungsstand eines angegebenen Faches.
-        Beispiel: `vls LA1 3.2.2 3.3`" setzt den aktuellen Stand auf 3.3 und speichert, dass heute 3.2.2 bis 3.3 behandelt wurden.
+        Beispiel: `vls LA1 3.2.2 3.3` setzt den aktuellen Stand auf 3.3 und speichert, dass heute 3.2.2 bis 3.3 behandelt wurden.
+        Möglichkeiten, den Befehl anzuwenden: \n``vls LA1 3.3``\n``vls LA1 3.2.2 3.3``\n``vls LA1 3.2.2 3.3 28.11.2022`v
         """
-
-        if len(args) < 3:
+ 
+        if not 2 <= len(args) <= 4:
             await ctx.send(embed=simple_embed(
                 ctx.author,
-                "Es müssen genau drei Argumente angegeben werden",
-                "Beispiel: `vls LA1 3.2.2 3.3`",
+                "Es müssen genau 2-4 Argumente angegeben werden",
+                "Beispiel:\n`vls LA1 3.3`\n`vls LA1 3.2.2 3.3`\n`vls LA1 3.2.2 3.3 28.11.2022`",
                 color=discord.Color.red()
             ))
             return
-        (subject, start, end) = args
-
+        
+        timestamp = time()
+        
+        if len(args) == 2:
+            (subject, end) = args
+            start = self.findLastEnd(subject)
+        elif len(args) == 3:
+            (subject, start, end) = args
+        elif len(args) == 4:
+            (subject, start, end, timestr) = args
+            timestamp = datetime.datetime.strptime(timestr, '%d.%m.%Y').timestamp()
+            
         if "subjects" not in self.data.keys() or subject not in self.data["subjects"]:
             await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Das Fach ``{subject}`` ist nicht vorhanden", color=discord.Color.red()))
             return
 
-        timestamp = time()
         self.data["subjects"][subject]["current"] = (end, timestamp)
         self.data["subjects"][subject]["history"].append(
             {
@@ -55,8 +65,22 @@ class Uni(commands.Cog):
         )
         await self.updateMessage()
         updateData(self.data)
-        await ctx.send(args)
 
+    def findLastEnd(self, subject):
+        if "subjects" not in self.data.keys() or subject not in self.data["subjects"]:
+            return "0.0"
+        
+        if len(self.data["subjects"][subject]["history"]) == 0:
+            return "0.0"
+        
+        current = self.data["subjects"][subject]["history"][0]
+        for h in self.data["subjects"][subject]["history"]:
+            if h["time"] > current["time"]:
+                current = h
+        
+        return current["end"]  
+    
+      
     async def updateMessage(self):
         if self.data["channel_id"] and self.data["message_id"]:
             msg = await self.bot.get_channel(self.data["channel_id"]).fetch_message(self.data["message_id"])
@@ -69,7 +93,7 @@ class Uni(commands.Cog):
             for subject in self.data["subjects"]:
                 current = self.data['subjects'][subject]['current']
                 timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
-                description += f"**{subject}**\n``{current[0]}`` (Stand {timestring})\n"
+                description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n"
             e.description = description
             await msg.edit(embed=e)
         pass

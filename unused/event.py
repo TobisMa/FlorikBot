@@ -1,19 +1,15 @@
-import discord
-from discord.ext import commands
-from asyncio import futures
 import asyncio
-
+import datetime
 import json
 import random
+from asyncio import futures
 
 import discord
 from discord.ext import commands
-from discord.ext.commands.errors import CommandError
-from discord.ext.commands.errors import CheckFailure, CommandNotFound, NotOwner
-from discord.ext.commands.errors import MissingRequiredArgument
+from discord.ext.commands.errors import CommandNotFound, MissingRequiredArgument
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 
 
 class NoParticipant(commands.CheckFailure):
@@ -59,7 +55,7 @@ class Event(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not(message.channel.id == 693062821650497600 or message.channel.id == 707325921245266011):
+        if message.channel.id not in [693062821650497600, 707325921245266011]:
             return
         if message.author == self.bot.user:
             return

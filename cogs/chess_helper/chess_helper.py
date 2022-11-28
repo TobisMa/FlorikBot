@@ -1,4 +1,4 @@
-from helper_functions import getEmoji
+from helper_functions import get_emoji
 
 
 NOTHING = 0
@@ -31,4 +31,4 @@ symbols = {
     
 
 def get_symbol_by_number(bot, num):
-    return str(getEmoji(bot, symbols[num]))
+    return str(get_emoji(bot, symbols[num]))

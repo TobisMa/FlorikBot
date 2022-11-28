@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import datetime
-from helper_functions import *
 
 
 class Debug(commands.Cog):

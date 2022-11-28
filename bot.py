@@ -1,19 +1,17 @@
 '''
 https://discord.com/api/oauth2/authorize?client_id=760125323580276757&permissions=8&scope=bot
 '''
-
-from asyncio import futures
 import asyncio
+import datetime
+import traceback
+
 import discord
 from discord.ext import commands
-from discord.ext.commands.errors import CheckFailure, CommandNotFound, NotOwner
-from discord.ext.commands.errors import MissingRequiredArgument
-
-import traceback
-import datetime
+from discord.ext.commands.errors import (CheckFailure, CommandNotFound,
+                                         MissingRequiredArgument, NotOwner)
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 
 intents = discord.Intents.all()
 intents.messages = True
@@ -36,16 +34,17 @@ async def on_command_error(ctx, error):
     # if this is not manually called with a textchannel as ctx and the ctx has no own error handler 
     if not isinstance(ctx, discord.TextChannel) and hasattr(ctx.command, 'on_error'):
         return
-    
-    error = getattr(error, 'original', error)
-    if isinstance(error, CommandNotFound) or isinstance(error, MissingRequiredArgument):
+
+    error: Exception = getattr(error, 'original', error)
+    if isinstance(error, (CommandNotFound, MissingRequiredArgument)):
         return
-    if isinstance(error, NotOwner) or isinstance(error, CheckFailure):
+    if isinstance(error, (NotOwner, CheckFailure)):
         await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red()))
         return
     embed = discord.Embed(title=repr(error)[:256])
     embed.color = discord.Color.red()
-    traceback_str = str(''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__)))
+    traceback_str = ''.join(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
+
     embed.description = f"```{traceback_str}```"
     if len(embed.description) > 2000: 
         embed.description = f"```{traceback_str[-1994:]}```"
@@ -67,11 +66,8 @@ async def on_ready():
 
 def is_bot_dev():
     async def predicate(ctx):
-        if ctx.author.id in config.OWNER_IDS:
-            return True
-        elif 761237826758246412 in [r.id for r in bot.get_guild(config.SERVER_ID).get_member(ctx.author.id).roles] :
-            return True
-        return False
+        return ctx.author.id in config.OWNER_IDS or 761237826758246412 in [r.id for r in bot.get_guild(config.SERVER_ID).get_member(ctx.author.id).roles]
+
     return commands.check(predicate)
 
 class HelpCommand(commands.HelpCommand):
@@ -89,9 +85,8 @@ class HelpCommand(commands.HelpCommand):
     async def can_run_cmd(self, cmd):
         try:
             return await cmd.can_run(self.context)
-        except:
+        except Exception:
             return False
-        return True
 
     async def send_command_help(self, command):
         e = discord.Embed(title=command.name, color=discord.Color.blurple())
@@ -106,13 +101,12 @@ class HelpCommand(commands.HelpCommand):
             e.description += "\nDu hast keine Berechtigungen, diesen Command auszuführen."
         await self.get_destination().send(embed=e)
 
-    async def prepare_pages(self):
-
+    async def prepare_pages(self):  
         pages = []
         for name in bot.cogs:
             c = bot.cogs[name]
             usable_commands = [cmd for cmd in c.get_commands() if await self.can_run_cmd(cmd)]
-            if len(usable_commands) > 0:
+            if usable_commands:
                 pages.append([name, c.description, usable_commands])
         return pages
 
@@ -149,7 +143,8 @@ class HelpCommand(commands.HelpCommand):
         active = True
         while active:
             try:
-                reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=lambda _reaction, _user: _user == ctx.author and (_reaction.emoji == right or _reaction.emoji == left) and _reaction.message == msg)
+                reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=lambda _reaction, _user: _user == ctx.author and _reaction.emoji in [right, left] and _reaction.message == msg)
+
                 await reaction.remove(user)
                 if reaction.emoji == left and page > 0:
                     page -= 1
@@ -189,6 +184,8 @@ class HelpCommand(commands.HelpCommand):
 #             await message.delete()
 
 # bot.add_cog(ServerRules(bot))
+
+
 async def main():
     async with bot:
         await bot.load_extension("cogs.reminder")

@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import datetime
 from time import time
-from helper_functions import *
+from helper_functions import simple_embed
 import json
 import config
 from bot import is_bot_dev, on_command_error
@@ -13,13 +13,14 @@ class Uni(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.data = getData()
+        self.data = get_data()
 
+    @staticmethod
     def is_in_uni_server():
         async def predicate(ctx):
-            possibleMember = ctx.author
+            possible_member = ctx.author
             guild = ctx.bot.get_guild(config.UNI_GUILD)
-            return possibleMember in guild.members
+            return possible_member in guild.members
 
         return commands.check(predicate)
 
@@ -63,8 +64,8 @@ class Uni(commands.Cog):
                 "end": end
             }
         )
-        await self.updateMessage()
-        updateData(self.data)
+        await self.update_message()
+        update_data(self.data)
         await ctx.message.add_reaction("\N{White Heavy Check Mark}")
         
 
@@ -83,22 +84,22 @@ class Uni(commands.Cog):
         return current["end"]  
     
       
-    async def updateMessage(self):
-        if "channel_id" in self.data.keys() and "message_id" in self.data.keys():
-            msg = await self.bot.get_channel(self.data["channel_id"]).fetch_message(self.data["message_id"])
+    async def update_message(self):
+        if "channel_id" not in self.data.keys() or "message_id" not in self.data.keys():
+            return
+        msg = await self.bot.get_channel(self.data["channel_id"]).fetch_message(self.data["message_id"])
 
-            if "subjects" not in self.data.keys():
-                return
+        if "subjects" not in self.data.keys():
+            return
 
-            e = discord.Embed(title="Vorlesungsstand", color=discord.Color.blurple())
-            description = ""
-            for subject in self.data["subjects"]:
-                current = self.data['subjects'][subject]['current']
-                timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
-                description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
-            e.description = description
-            await msg.edit(embed=e)
-        pass
+        e = discord.Embed(title="Vorlesungsstand", color=discord.Color.blurple())
+        description = ""
+        for subject in self.data["subjects"]:
+            current = self.data['subjects'][subject]['current']
+            timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
+            description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
+        e.description = description
+        await msg.edit(embed=e)
 
     @is_bot_dev()
     @commands.command(aliases=["vlsadd"])
@@ -116,8 +117,8 @@ class Uni(commands.Cog):
             "history": [],
             "inactive": False
         }
-        updateData(self.data)
-        await self.updateMessage()
+        update_data(self.data)
+        await self.update_message()
         await ctx.send(embed=simple_embed(ctx.author, f"Das Fach ``{subject}`` wurde erfolgreich hinzugefügt.", color=discord.Color.green()))
 
     @is_in_uni_server()
@@ -127,16 +128,16 @@ class Uni(commands.Cog):
         self.data["channel_id"] = ctx.channel.id
         msg = await ctx.send(embed=simple_embed(ctx.author, "Vorlesungsstand", color=discord.Color.green()))
         self.data["message_id"] = msg.id
-        updateData(self.data)
-        await self.updateMessage()
+        update_data(self.data)
+        await self.update_message()
 
 
-def updateData(data):
+def update_data(data):
     with open(config.path + '/json/uniVL.json', 'w') as myfile:
         json.dump(data, myfile)
 
 
-def getData():
+def get_data():
     try:
         with open(config.path + '/json/uniVL.json', 'r') as myfile:
             return json.loads(myfile.read())

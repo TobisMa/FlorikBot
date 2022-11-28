@@ -97,7 +97,7 @@ class Wholesome(commands.Cog):
         def is_gif(url):
             try:
                 r = requests.head(url)
-            except:
+            except BaseException:
                 return False
             if r.headers["content-type"] == "image/gif":
                 return True
@@ -131,9 +131,8 @@ class Wholesome(commands.Cog):
                 js.append(add)
                 json.dump(js, myfile)
         except FileNotFoundError:
-            file = open(config.path + f'/json/{name}.json', 'w')
-            file.write("[]")
-            file.close()
+            with open(config.path + f'/json/{name}.json', 'w') as file:
+                file.write("[]")
 
 
     @hug.error

@@ -3,7 +3,6 @@ import contextlib
 import datetime
 import json
 import operator
-from asyncio import futures
 from collections import defaultdict
 
 import discord
@@ -33,7 +32,7 @@ class Memes(commands.Cog):
     #     voteList = getVoteList()
     #     e = discord.Embed()
     #     e.color = discord.Color.purple()
-    #     e.timestamp = datetime.datetime.utcnow()
+    #     e.timestamp = datetime.datetime.now()
     #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
     #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar)
     #     if not len(voteList) > 0:
@@ -71,10 +70,9 @@ class Memes(commands.Cog):
                          icon_url=winner_message.author.avatar)
             e.color = winner_message.guild.get_member(
                 winner_message.author.id).colour
-
-            # date = winnerMessage.created_at  # date was never accessed
+            date = winner_message.created_at
             e.description += "\n" + winner_message.content
-            e.timestamp = discord.utils.utcnow()
+            e.timestamp = datetime.datetime.now()
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             await ctx.message.channel.send(embed=e)
             if len(winner_message.attachments) > 0 and not is_url_image(e.image.url):
@@ -85,7 +83,7 @@ class Memes(commands.Cog):
     @is_private_server()
     @commands.command()
     async def stats(self, ctx, *args):
-        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus
+        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus.
             Dies wird aufgrund von discord rate limits lange dauern.
             Für jeden Nutzer werden Anzahl Memes, Anzahl upvotes/downvotes, upvote/downvote-Verhältnis sowie durchschnittliche upvotes/downvotes aufgelistet.
             \nAls optionale Parameter können zuerst Limit des Durchsuchens, dann auszuwertende Nutzer angegeben werden.
@@ -101,14 +99,15 @@ class Memes(commands.Cog):
         progress = 0
         progress_msg = await ctx.send("`  0% fertig.`")
         last_edited = []
-        start_time = discord.utils.utcnow()
+        start_time = datetime.datetime.now()
         async with ctx.channel.typing():
             channel = self.bot.get_channel(config.MEME_CHANNEL_ID)
             upvote = get_emoji(self.bot, config.UPVOTE)
             downvote = get_emoji(self.bot, config.DOWNVOTE)
             members = defaultdict(lambda: defaultdict(int))
             limit = int(args[0]) if args and args[0].isnumeric() else None
-            message_count = limit if limit != None else len(await channel.history(limit=None).flatten())
+            message_count = limit if limit != None else len([a async for a in await channel.history(limit=None)])
+
             counter = 0
             async for m in channel.history(limit=limit):
                 counter += 1
@@ -116,7 +115,7 @@ class Memes(commands.Cog):
                 old_prog = progress
                 progress = round(counter / message_count * 100)
                 if progress != old_prog:
-                    time_now = datetime.datetime.utcnow()
+                    time_now = datetime.datetime.now()
                     if len(last_edited) >= 5:
                         if (time_now - last_edited[0]).seconds >= 5:
                             await progress_msg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
@@ -129,7 +128,7 @@ class Memes(commands.Cog):
                 if len(m.reactions) > 0:
                     meme = False
                     for r in m.reactions:
-                        voters = await r.users().flatten()
+                        voters = [a async for a in r.users()]
                         count = r.count - 1 if self.bot.user in voters else r.count
                         if r.emoji == upvote:
                             members[m.author.id]["up"] += count
@@ -140,13 +139,13 @@ class Memes(commands.Cog):
                     if meme:
                         members[m.author.id]["memes"] += 1
 
-            end_time = str(discord.utils.utcnow() - start_time)
+            end_time = str(datetime.datetime.now() - start_time)
             # round milliseconds
             end_time = end_time.split(".")[0] + "." + str(round(int(end_time.split(".")[1]), 2))
             await progress_msg.edit(content=f"`Bearbeitung in {end_time} abgeschlossen.`")
 
             e = discord.Embed(title="Stats", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
+                              timestamp=datetime.datetime.now())
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
             for member_id, value_ in members.items():
@@ -182,15 +181,15 @@ class Memes(commands.Cog):
         ## Leaderboard ##
         l = discord.Embed(
             title="Leaderboard (Up-/Downvote Verhältnis)",
-            color=discord.Color.gold(), 
-            timestamp=datetime.datetime.utcnow()
+            color=discord.Color.gold(),
+            timestamp=datetime.datetime.now()
         )
 
-        ratioLeaderboard = [[v["ratio"], k] for k, v in members.items()]
+        ratio_leaderboard = [[v["ratio"], k] for k, v in members.items()]
 
-        ratioLeaderboard.sort(reverse=True)
+        ratio_leaderboard.sort(reverse=True)
 
-        for r in ratioLeaderboard:
+        for r in ratio_leaderboard:
             member = self.bot.get_guild(config.SERVER_ID).get_member(r[1])
             l.add_field(name=member.display_name, value=str(r[0]))
 

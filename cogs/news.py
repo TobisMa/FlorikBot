@@ -46,7 +46,7 @@ class Nachrichten(commands.Cog):
                             e.title = news["title"]
                             e.url = news["shareURL"]
                             e.description = news["firstSentence"]
-                            with contextlib.suppress(Exception):   # still no idea what contexlib.suppress is
+                            with contextlib.suppress(BaseException):   # still no idea what contexlib.suppress is
                                 e.set_image(
                                     url=news["teaserImage"]["videowebl"]["imageurl"])
                             embed_list.append(e)

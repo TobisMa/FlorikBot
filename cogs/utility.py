@@ -1,4 +1,5 @@
 import collections
+import contextlib
 import discord
 from discord.ext import commands
 from discord.errors import HTTPException
@@ -25,7 +26,7 @@ from unused.school import *
 from cogs.user_messages import *
 from cogs.utility import *
 from cogs.wholesome import *
-
+from cogs.uni import *
 
 _TEX_BP = """\\documentclass[a0,landscape]{{a0poster}}
 \\usepackage{{mathtools}}
@@ -81,9 +82,7 @@ class Utility(commands.Cog):
             nx = x % 2
             ny = y % 4
 
-            if pix[x, y] == 255:
-                return pos[ny][nx]
-            return "0"
+            return pos[ny][nx] if pix[x, y] == 255 else "0"
 
         # returns the position in the array for a pixel at [x y]
         def get_arr_position(x, y):
@@ -108,7 +107,7 @@ class Utility(commands.Cog):
         for line in dots:
             e.description += ''.join(line) + "\n"
         e.description += "```"
-        
+
         await ctx.send(embed=e)
 
     # https://gist.github.com/nitros12/2c3c265813121492655bc95aa54da6b9 geklaut und überarbeitet
@@ -135,6 +134,7 @@ class Utility(commands.Cog):
             # for with blocks, again we insert returns into the body
             if isinstance(body[-1], ast.With):
                 insert_returns(body[-1].body)
+
         fn_name = "_eval_expr"
 
         cmd = cmd.strip("` ")
@@ -161,11 +161,9 @@ class Utility(commands.Cog):
 
         result = (await eval(f"{fn_name}()", env))
 
-        try:
+        with contextlib.suppress(HTTPException):
             if type(result) != discord.message.Message:
                 await ctx.send(result)
-        except HTTPException:
-            pass
 
 
     def ownpnglatex(self, tex_string, output=None):
@@ -193,10 +191,8 @@ class Utility(commands.Cog):
 
         if status != 0:
             with Path(output) as o:
-                try:
+                with contextlib.suppress(FileNotFoundError):
                     o.unlink()
-                except FileNotFoundError:
-                    pass
             raise ValueError("Failed to generate png file.")
         return Path(output)
 
@@ -207,14 +203,14 @@ class Utility(commands.Cog):
         image = image.convert("RGBA")
         datas = image.getdata()
 
-        newData = []
+        new_data = []
         for item in datas:
             if item[0] == 0 and item[1] == 0 and item[2] == 0:
-                newData.append((255, 255, 255, 0))
+                new_data.append((255, 255, 255, 0))
             else:
-                newData.append(item)
+                new_data.append(item)
 
-        image.putdata(newData)
+        image.putdata(new_data)
         return image
 
     @commands.command()
@@ -244,7 +240,8 @@ class Utility(commands.Cog):
         cross = "\N{CROSS MARK}"
         await msg.add_reaction(cross)
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and (_reaction.emoji == check or _reaction.emoji == cross) and _reaction.message == msg)
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == ctx.message.author and _reaction.emoji in [check, cross] and _reaction.message == msg)
+
         except asyncio.TimeoutError:
             e.color = discord.Color.orange()
             await msg.edit(embed=e)
@@ -260,7 +257,7 @@ class Utility(commands.Cog):
     @commands.command()
     async def zitat(self, ctx, *args):
         """Gibt ein zufälliges Zitat aus der Zitatesammlung aus."""
-        if(len(args) > 0 and not args[0].isnumeric()):
+        if args and not args[0].isnumeric():
             await ctx.send(embed=simple_embed(ctx.author, f"Um ein Zitat hinzuzufügen, nutze bitte {config.PREFIX}zitate", color=discord.Color.red()))
             return
         if len(self.quotes) == 0:
@@ -268,7 +265,7 @@ class Utility(commands.Cog):
             return
         quote = random.choice(self.quotes)
         random_quote = True
-        if(len(args) > 0 and args[0].isnumeric()):
+        if args and args[0].isnumeric():
             index = int(args[0])
             if(1 <= index <= len(self.quotes)):
                 quote = self.quotes[index - 1]
@@ -279,7 +276,7 @@ class Utility(commands.Cog):
         
     def get_quotes(self):
         try:
-            with open(config.path + f'/json/quotes.json', 'r') as myfile:
+            with open(config.path + '/json/quotes.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return []
@@ -290,9 +287,8 @@ class Utility(commands.Cog):
             with open(config.path + '/json/quotes.json', 'w') as myfile:
                 json.dump(self.quotes, myfile)
         except FileNotFoundError:
-            file = open(config.path + '/json/quotes.json', 'w')
-            file.write("[]")
-            file.close()
+            with open(config.path + '/json/quotes.json', 'w') as file:
+                file.write("[]")
             with open(config.path + '/json/quotes.json', 'w') as myfile:
                 json.dump(self.quotes, myfile)
         
@@ -300,9 +296,9 @@ class Utility(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        afkChannel = member.guild.afk_channel
+        afk_channel = member.guild.afk_channel
         if after.channel and before.channel:  # if the member didn't just join or quit, but moved channels
-            if after.channel == afkChannel and before.channel.id in config.AWAKE_CHANNEL_IDS:  # the "Stay awake" feature
+            if after.channel == afk_channel and before.channel.id in config.AWAKE_CHANNEL_IDS:  # the "Stay awake" feature
                 await member.move_to(before.channel)
 
         # the "banish" feature
@@ -314,10 +310,8 @@ class Utility(commands.Cog):
         # move to hell if banished role was added
         hell = before.guild.get_channel(config.BANISHED_VC_ID)
         r = before.guild.get_role(config.BANISHED_ROLE_ID)
-        if r in after.roles and r not in before.roles and before.id not in self.bot.owner_ids:
-            if after.voice != None:
-                if after.voice.channel != hell:
-                    await after.move_to(hell)
+        if r in after.roles and r not in before.roles and before.id not in self.bot.owner_ids and after.voice != None and after.voice.channel != hell:
+            await after.move_to(hell)
 
 
 

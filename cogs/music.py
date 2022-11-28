@@ -69,7 +69,7 @@ class Music(commands.Cog):
             await on_command_error(ctx, CommandError("Dieser Nachricht liegt keine Datei bei."))
             return
 
-        with contextlib.suppress(Exception):  # still no idea what it is doing
+        with contextlib.suppress(BaseException):  # still no idea what it is doing
             await ctx.author.voice.channel.connect()
             
         msg = ctx.message

@@ -23,7 +23,7 @@ class Debug(commands.Cog):
         e = discord.Embed(title="Emotes:")
         emotes = [f"<:{e.name}:{e.id}>" for e in self.bot.emojis]
         e.description = ''.join(emotes)
-        e.timestamp = discord.utils.utcnow()
+        e.timestamp = datetime.datetime.now()
         e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
         m = await ctx.send(embed=e)
         # for i in range(min(20, len(emotes))):

@@ -2,6 +2,7 @@
 https://discord.com/api/oauth2/authorize?client_id=760125323580276757&permissions=8&scope=bot
 '''
 import asyncio
+import datetime
 import traceback
 
 import discord
@@ -58,7 +59,7 @@ async def on_ready():
     await bot.change_presence(activity=activity, status=discord.enums.Status.dnd)
     e = discord.Embed(title="Bot started")
     e.color = discord.Color.blurple()
-    e.timestamp = discord.utils.utcnow()
+    e.timestamp = datetime.datetime.now()
     e.set_footer(text=bot.user.name, icon_url=bot.user.avatar)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=e)
@@ -93,7 +94,7 @@ class HelpCommand(commands.HelpCommand):
         e.description = f"```{' | '.join(command.aliases)}```" + \
             cmdhelp if len(command.aliases) > 0 else cmdhelp
         e.set_footer(icon_url=self.context.author.avatar)
-        e.timestamp = discord.utils.utcnow()
+        e.timestamp = datetime.datetime.now()
 
         if not await self.can_run_cmd(command):
             e.color = discord.Color.red()
@@ -135,7 +136,7 @@ class HelpCommand(commands.HelpCommand):
         e.set_footer(text=f"{page + 1} / {page_count}",
                      icon_url=ctx.author.avatar)
 
-        e.timestamp = discord.utils.utcnow()
+        e.timestamp = datetime.datetime.now()
         msg = await destination.send(embed=e)
         await msg.add_reaction(left)
         await msg.add_reaction(right)
@@ -193,10 +194,12 @@ async def main():
         await bot.load_extension("cogs.utility")
         await bot.load_extension("cogs.memes")
 
+        await bot.load_extension("cogs.uni")
+
         await bot.load_extension("cogs.news")
         await bot.load_extension("cogs.debug")
         await bot.load_extension("cogs.music")
-        
+
         bot.help_command = HelpCommand()
         await bot.start(config.TOKEN, reconnect=True)
 

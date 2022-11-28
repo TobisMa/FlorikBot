@@ -82,7 +82,7 @@ class Uni(commands.Cog):
     
       
     async def updateMessage(self):
-        if self.data["channel_id"] and self.data["message_id"]:
+        if "channel_id" in self.data.keys() and "message_id" in self.data.keys():
             msg = await self.bot.get_channel(self.data["channel_id"]).fetch_message(self.data["message_id"])
 
             if "subjects" not in self.data.keys():

@@ -70,6 +70,49 @@ def is_bot_dev():
 
     return commands.check(predicate)
 
+
+class LeftRight(discord.ui.View):
+    def __init__(self, embed, pages, page, ctx):
+        super().__init__(timeout=60)
+        self.e = embed
+        self.value = 0
+        self.pages = pages
+        self.page = page
+        self.ctx = ctx
+
+    async def updateEmbed(self, interaction, value):
+        e = self.e
+        pages = self.pages
+        page_count = len(pages)
+        if value == -1 and self.page > 0:
+            self.page -= 1
+        elif value == 1 and self.page < page_count - 1:
+            self.page += 1
+        else:
+            await interaction.response.edit_message(embed=e, view=self)
+            return
+        e.clear_fields()
+        e.title = pages[self.page][0]
+        e.description = pages[self.page][1]
+
+        for cmd in pages[self.page][2]:
+            e.add_field(name=f"{cmd.name} \n< {' | '.join(cmd.aliases)} >" if len(cmd.aliases) > 0 else cmd.name + "\n<>",
+                        value=cmd.short_doc if cmd.short_doc != '' else " - ")
+            
+        e.set_footer(text=f"{self.page + 1} / {page_count}",
+                        icon_url=self.ctx.author.avatar)
+        
+        await interaction.response.edit_message(embed=e, view=self)
+
+    @discord.ui.button(emoji="\u25C0", style=discord.ButtonStyle.blurple)
+    async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.updateEmbed(interaction, -1)
+
+    @discord.ui.button(emoji="\u25B6", style=discord.ButtonStyle.blurple)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.updateEmbed(interaction, 1)
+        
+        
 class HelpCommand(commands.HelpCommand):
     """Zeigt eine hilfreiche Auflistung aller Commands"""
 
@@ -114,14 +157,11 @@ class HelpCommand(commands.HelpCommand):
         ctx = self.context
         destination = self.get_destination()
         e = discord.Embed(color=discord.Color.blurple(), description='')
-        right = "\u25B6"
-        left = "\u25C0"
 
         pages = await self.prepare_pages()
         if page == "":
             page = 0
-        # elif page.isnumeric():
-        #     page = int(page) if int(page) < len(pages) else 0
+
         elif page in [bot.cogs[k] for k in bot.cogs.keys()]:
             page = [i for i in range(len(pages))
                     if pages[i][0] == page.qualified_name][0]
@@ -137,33 +177,9 @@ class HelpCommand(commands.HelpCommand):
                      icon_url=ctx.author.avatar)
 
         e.timestamp = datetime.datetime.now()
-        msg = await destination.send(embed=e)
-        await msg.add_reaction(left)
-        await msg.add_reaction(right)
-        active = True
-        while active:
-            try:
-                reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=lambda _reaction, _user: _user == ctx.author and _reaction.emoji in [right, left] and _reaction.message == msg)
-
-                await reaction.remove(user)
-                if reaction.emoji == left and page > 0:
-                    page -= 1
-                elif reaction.emoji == right and page < page_count - 1:
-                    page += 1
-                else:
-                    continue
-                e.clear_fields()
-                e.title = pages[page][0]
-                e.description = pages[page][1]
-
-                for cmd in pages[page][2]:
-                    e.add_field(name=f"{cmd.name} \n< {' | '.join(cmd.aliases)} >" if len(cmd.aliases) > 0 else cmd.name + "\n<>",
-                                value=cmd.short_doc if cmd.short_doc != '' else " - ")
-                e.set_footer(text=f"{page + 1} / {page_count}",
-                             icon_url=ctx.author.avatar)
-                await msg.edit(embed=e)
-            except asyncio.exceptions.TimeoutError:
-                active = False
+        view = LeftRight(e, pages, page, ctx)
+        msg = await destination.send(embed=e, view=view)
+        await view.wait()
         e.color = discord.Color.orange()
         await msg.edit(embed=e)
 

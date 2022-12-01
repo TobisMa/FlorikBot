@@ -80,6 +80,12 @@ class LeftRight(discord.ui.View):
         self.page = page
         self.ctx = ctx
 
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+
+        await self.message.edit(view=self)
+
     async def updateEmbed(self, interaction, value):
         e = self.e
         pages = self.pages
@@ -179,6 +185,7 @@ class HelpCommand(commands.HelpCommand):
         e.timestamp = datetime.datetime.now()
         view = LeftRight(e, pages, page, ctx)
         msg = await destination.send(embed=e, view=view)
+        view.message = msg
         await view.wait()
         e.color = discord.Color.orange()
         await msg.edit(embed=e)

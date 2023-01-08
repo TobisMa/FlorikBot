@@ -6,6 +6,7 @@ import re
 from typing import Optional
 
 import discord
+from discord import app_commands
 from discord.errors import Forbidden
 from discord.ext import commands, tasks
 
@@ -15,12 +16,15 @@ from helper_functions import simple_embed
 
 
 class Reminder():
-    def __init__(self, author = None, date = "", message = "", users = None, roles = None, reminder_again = 0, reminder_again_in = "", is_private=False, r = None):
+    def __init__(self, author = None, date = "", message = "", users = None, roles = None, reminder_again = 0, reminder_again_in = "", is_private=False, r = None, channel=None):
         if users is None:
             users = []
         if roles is None:
             roles = []
             
+        if channel != None:
+            self.channel = channel
+        
         if not r:
             self.author = author
             self.date = date
@@ -42,6 +46,39 @@ class Erinnerungen(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.checkReminder.start()
+
+    @app_commands.command(name="reminder", description="erschafft einen Reminder nach relativer Zeitangabe")
+    @app_commands.describe(zeit="Zeitangabe für die Erinnerung", typ="Zeitformat", zugriff="Sichtbarkeit der Erinnerung", nachricht="Erinnerungsnachricht")
+    @app_commands.choices(typ=[
+            app_commands.Choice(name="relative Zeitangabe (5min)", value="relative"),
+            app_commands.Choice(name="absolute Zeitangabe (dd.MM.yyyy hh:mm)", value="absolute"),
+        ],
+        zugriff=[
+            app_commands.Choice(name="privat", value="private"),
+            app_commands.Choice(name="öffentlich", value="public"), 
+        ]
+    )
+    async def newnewreminder(self, interaction: discord.Interaction, typ: app_commands.Choice[str], zeit: str, zugriff: app_commands.Choice[str], nachricht: str):
+        is_private = zugriff.value == "private"
+        if typ.value == "relative":
+            if not self.parse_to_timedelta(zeit):
+                await interaction.response.send_message("Das eingegebene Zeitformat entspricht nicht dem Muster `5min` / `1h5min` / `6d22h`", ephemeral=True)
+                return
+            time = self.parse_to_timedelta(zeit)
+            time += datetime.datetime.now()
+        elif typ.value == "absolute":
+            try:
+                time = datetime.datetime.strptime(zeit, '%d.%m.%Y %H:%M')
+            except ValueError:
+                await interaction.response.send_message("Das eingegebene Zeitformat entspricht nicht dem Muster `dd.MM.yyyy hh:mm`", ephemeral=True)
+                return
+        
+        time = time.strftime('%d.%m.%Y %H:%M')
+        r = Reminder(interaction.user.id, time, nachricht, [interaction.user.id], [], is_private=is_private, channel=interaction.channel_id)
+        e = simple_embed(interaction.user, f"Glückwunsch, deine Erinnerung für {time} wurde erfolgreich gespeichert.")
+        add_new_reminder(r) 
+        await interaction.response.send_message(embed=e, ephemeral=is_private)
+        
 
     @commands.command(aliases=["remindme", "remind", "reminder", "rmd", "rmnd", "rmndr"])
     async def setreminder(self, ctx, *, arg):
@@ -204,12 +241,24 @@ class Erinnerungen(commands.Cog):
                     with contextlib.suppress(BaseException):
                         if rem.private:
                             channel = self.bot.get_user(rem.users[0])
+                        else:
+                            with contextlib.suppress(BaseException):
+                                if rem.channel:
+                                    channel = self.bot.get_channel(rem.channel)
+                    if channel is None:
+                        channel = self.bot.get_user(rem.users[0])
                     time = datetime.datetime.strptime(rem.date, '%d.%m.%Y %H:%M')
                     if time <= now:
-                        guild = self.bot.get_guild(config.SERVER_ID)
-                        content = "" + ' '.join([guild.get_role(role).mention for role in rem.roles])
-                        content += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
-                        color = guild.get_member(rem.author).color
+                        if not isinstance(channel, discord.User):
+                            guild = channel.guild
+                            # guild = self.bot.get_guild(config.SERVER_ID)
+                            if guild:
+                                content = "" + ' '.join([guild.get_role(role).mention for role in rem.roles])
+                                content += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
+                                color = guild.get_member(rem.author).color
+                        else:
+                            content = self.bot.get_user(rem.author).mention
+                            color = discord.Color.blurple()
                         embed = simple_embed(self.bot.get_user(rem.author), "Erinnerung", rem.message, color=color)
 
                         remove_new_reminder(rem.author, rem)
@@ -522,4 +571,4 @@ def remove_reminder(recipientID, time, message, author):
 
 
 async def setup(bot):
-    await bot.add_cog(Erinnerungen(bot))
+    await bot.add_cog(Erinnerungen(bot), guilds=config.GUILDS)

@@ -6,6 +6,7 @@ import datetime
 import traceback
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands.errors import (CheckFailure, CommandNotFound,
                                          MissingRequiredArgument, NotOwner)
@@ -16,7 +17,8 @@ from helper_functions import simple_embed
 intents = discord.Intents.all()
 intents.messages = True
 intents.presences = True
-bot = commands.Bot(command_prefix=config.PREFIX, intents=intents)
+bot = commands.Bot(command_prefix=config.PREFIX, intents=intents, application_id=config.APP_ID)
+# tree = app_commands.CommandTree(bot)
 bot.owner_ids = config.OWNER_IDS
 
 @bot.event
@@ -63,6 +65,7 @@ async def on_ready():
     e.set_footer(text=bot.user.name, icon_url=bot.user.avatar)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=e)
+    await bot.tree.sync(guild=discord.Object(id=572410770520932352))
 
 def is_bot_dev():
     async def predicate(ctx):
@@ -224,6 +227,11 @@ async def main():
         await bot.load_extension("cogs.music")
 
         bot.help_command = HelpCommand()
+
+        # await bot.tree.sync()
+        # print(bot.tree)
+        # await bot.tree.copy_global_to(guild=discord.Object(id=572410770520932352))
+        
         await bot.start(config.TOKEN, reconnect=True)
 
 if __name__ == "__main__":

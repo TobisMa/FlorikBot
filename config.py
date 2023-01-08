@@ -1,4 +1,6 @@
 import json
+import discord
+
 path = ""
 try:
     import os
@@ -16,6 +18,7 @@ OWNER_IDS = config["owner_id"]
 REQUIRED_UPVOTES_FOR_GOOD_MEME = config["upvotes_for_pin"]
 DELETE_AFTER_DAYS = config["delete_after_days"]
 TOKEN = config["discord_token"]
+APP_ID = config["app_id"]
 STATUS_MSG = config["status_message"]
 MEME_CHANNEL_ID = config["meme_channel_id"]
 UPVOTE = config["upvote_emoji"]
@@ -37,5 +40,7 @@ GOOD_MEMES_CHANNEL_ID = config["good_memes_channel_id"]
 BANISHED_ROLE_ID = config["banished_role_id"]
 BANISHED_VC_ID = config["banished_channel_id"]
 wortspielAllowedUserIds = [327461111173742592, 760125323580276757]
-
 UNI_GUILD = config["uni"]["uni_server_id"]
+
+GUILDS = [discord.Object(id=config["debug_guild"])] if config["debug"] == 1 else None
+

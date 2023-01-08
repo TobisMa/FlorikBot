@@ -571,4 +571,8 @@ def remove_reminder(recipientID, time, message, author):
 
 
 async def setup(bot):
-    await bot.add_cog(Erinnerungen(bot), guilds=config.GUILDS)
+    if(config.GUILDS):
+        await bot.add_cog(Erinnerungen(bot), guilds=config.GUILDS)
+    else:
+        await bot.add_cog(Erinnerungen(bot))
+        

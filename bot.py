@@ -29,7 +29,6 @@ async def on_error(event, *args, **kwargs):
     embed.set_footer(text=kwargs)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=embed)
-    # Florian war hier
     
 @bot.event
 async def on_command_error(ctx, error):

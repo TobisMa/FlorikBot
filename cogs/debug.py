@@ -35,4 +35,7 @@ class Debug(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Debug(bot), guilds=config.GUILDS)
+    if(config.GUILDS):
+        await bot.add_cog(Debug(bot), guilds=config.GUILDS)
+    else:
+        await bot.add_cog(Debug(bot))

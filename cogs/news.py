@@ -17,7 +17,8 @@ class Nachrichten(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.old_news_ids = self.get_data()
-        self.news_loop.start()
+        if not config.DEBUG:
+            self.news_loop.start()
 
     @tasks.loop(seconds=300)
     async def news_loop(self):

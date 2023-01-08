@@ -41,6 +41,7 @@ BANISHED_ROLE_ID = config["banished_role_id"]
 BANISHED_VC_ID = config["banished_channel_id"]
 wortspielAllowedUserIds = [327461111173742592, 760125323580276757]
 UNI_GUILD = config["uni"]["uni_server_id"]
-
-GUILDS = [discord.Object(id=config["debug_guild"])] if config["debug"] == 1 else None
+DEBUG = config["debug"] == 1
+DEBUG_GUILD = discord.Object(id=config["debug_guild"])
+GUILDS = [DEBUG_GUILD] if DEBUG else None
 

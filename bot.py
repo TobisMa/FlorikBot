@@ -64,8 +64,11 @@ async def on_ready():
     e.set_footer(text=bot.user.name, icon_url=bot.user.avatar)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=e)
-    await bot.tree.sync(guild=discord.Object(id=572410770520932352))
-
+    if(config.DEBUG):
+        await bot.tree.sync(guild=config.DEBUG_GUILD)
+    else:
+        await bot.tree.sync()
+        
 def is_bot_dev():
     async def predicate(ctx):
         return ctx.author.id in config.OWNER_IDS or 761237826758246412 in [r.id for r in bot.get_guild(config.SERVER_ID).get_member(ctx.author.id).roles]

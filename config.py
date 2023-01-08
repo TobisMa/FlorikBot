@@ -37,3 +37,5 @@ GOOD_MEMES_CHANNEL_ID = config["good_memes_channel_id"]
 BANISHED_ROLE_ID = config["banished_role_id"]
 BANISHED_VC_ID = config["banished_channel_id"]
 wortspielAllowedUserIds = [327461111173742592, 760125323580276757]
+
+UNI_GUILD = config["uni"]["uni_server_id"]

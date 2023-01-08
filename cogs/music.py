@@ -1,13 +1,13 @@
+import asyncio
+import contextlib
+import os
+
 import discord
+import youtube_dl
 from discord.ext import commands
 from discord.ext.commands.errors import CommandError
 
-import asyncio
-import youtube_dl
-import os
-
-from helper_functions import *
-from bot import on_command_error, is_bot_dev
+from bot import is_bot_dev, on_command_error
 
 youtube_dl.utils.bug_reports_message = lambda: ''
 
@@ -56,7 +56,7 @@ class Music(commands.Cog):
         if not os.path.isfile(query):
             await on_command_error(ctx, FileNotFoundError(f"Die gewünschte Datei {query} existiert nicht."))
         source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-        print(str(source))
+        print(source)
         ctx.voice_client.play(source, after=lambda e: self.raise_error(e) if e else None)
 
         await ctx.send('Spielt {} ab.'.format(query))
@@ -68,13 +68,12 @@ class Music(commands.Cog):
         if len(ctx.message.attachments) == 0:
             await on_command_error(ctx, CommandError("Dieser Nachricht liegt keine Datei bei."))
             return
-        
-        try:
+
+        with contextlib.suppress(BaseException):  # still no idea what it is doing
             await ctx.author.voice.channel.connect()
-        except:
-            pass
+            
         msg = ctx.message
-        f = open("test/tmp.mp3", "wb") 
+        f = open("test/tmp.mp3", "wb")
         await msg.attachments[0].save(f)
         source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(f.name))
         ctx.voice_client.play(source, after=lambda e: self.raise_error(e) if e else None)
@@ -151,8 +150,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-
-        if 'entries' in data:
+        
+        # FIXME what is if data is None?
+        
+        if "entries" in data:
             # take first item from a playlist
             data = data['entries'][0]
 
@@ -161,5 +162,5 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 
-def setup(bot):
-    bot.add_cog(Music(bot))
+async def setup(bot):
+    await bot.add_cog(Music(bot))

@@ -124,7 +124,7 @@ class Paginator():
                     continue
                 e = self.get_page(page)
                 await msg.edit(embed=e)
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 active = False
         e.color = discord.Color.orange()
         await msg.edit(embed=e)

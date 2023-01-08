@@ -1,16 +1,16 @@
-import discord
-from discord import embeds
-from discord.ext import commands
-from discord.ext import tasks
-
 import asyncio
+import contextlib
 import datetime
 import json
+
 import aiohttp
+import discord
+from discord import embeds
+from discord.ext import commands, tasks
 
 import config
-from helper_functions import *
 from bot import on_command_error
+from helper_functions import simple_embed
 
 
 class Nachrichten(commands.Cog):
@@ -46,24 +46,22 @@ class Nachrichten(commands.Cog):
                             e.title = news["title"]
                             e.url = news["shareURL"]
                             e.description = news["firstSentence"]
-                            try:
+                            with contextlib.suppress(BaseException):   # still no idea what contexlib.suppress is
                                 e.set_image(
                                     url=news["teaserImage"]["videowebl"]["imageurl"])
-                            except:
-                                pass
                             embed_list.append(e)
                     self.save_data()
         return embed_list
 
     def get_data(self):
         try:
-            with open(config.path + f'/json/news.json', 'r') as myfile:
+            with open(config.path + '/json/news.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return []
 
     def save_data(self):
-        with open(config.path + f'/json/news.json', 'w') as myfile:
+        with open(config.path + '/json/news.json', 'w') as myfile:
             json.dump(self.old_news_ids, myfile)
 
     @news_loop.before_loop
@@ -86,5 +84,5 @@ class Nachrichten(commands.Cog):
         await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), error)
 
 
-def setup(bot):
-    bot.add_cog(Nachrichten(bot))
+async def setup(bot):
+    await bot.add_cog(Nachrichten(bot))

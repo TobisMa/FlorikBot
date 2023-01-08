@@ -4,7 +4,7 @@ import json
 import random
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 
 class UserMessages(commands.Cog):
     def __init__(self, bot):
@@ -14,9 +14,8 @@ class UserMessages(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         js = self.data
-        if str(message.author.id) in js.keys():
-            if message.content in js[str(message.author.id)].keys():
-                await message.channel.send(random.choice(js[str(message.author.id)][message.content]))
+        if str(message.author.id) in js.keys() and message.content in js[str(message.author.id)].keys():
+            await message.channel.send(random.choice(js[str(message.author.id)][message.content]))
 
 
     @commands.command(aliases=["am"])
@@ -43,14 +42,13 @@ class UserMessages(commands.Cog):
                 await ctx.send(embed=simple_embed(ctx.author, "Du musst genau ein Argument angeben",
                             'Die Syntax ist: `removeMessage "Nachricht, die gelöscht werden soll (in Hochkommas, falls mehr als ein Wort)"`',
                             color=discord.Color.red()))
+            elif args[0] in self.data[str(ctx.author.id)].keys():
+                self.remove_from_json(ctx.author, args[0])
+                e = simple_embed(ctx.author, "Erfolgreich entfernt!", color=ctx.author.color)
+                e.description = f"`{args[0]}` wurde erfolgreich entfernt."
+                await ctx.send(embed=e)
             else:
-                if args[0] in self.data[str(ctx.author.id)].keys():
-                    self.remove_from_json(ctx.author, args[0])
-                    e = simple_embed(ctx.author, "Erfolgreich entfernt!", color=ctx.author.color)
-                    e.description = f"`{args[0]}` wurde erfolgreich entfernt."
-                    await ctx.send(embed=e)
-                else:
-                    await ctx.send(embed=simple_embed(ctx.author, "Diese Nachricht befindet sich nicht in deinen Nachrichten.", color=discord.Color.red()))
+                await ctx.send(embed=simple_embed(ctx.author, "Diese Nachricht befindet sich nicht in deinen Nachrichten.", color=discord.Color.red()))
 
         else:
             await ctx.send(embed=simple_embed(ctx.author, "Du hast keine eigenen Nachrichten eingestellt.", color=discord.Color.red()))
@@ -69,7 +67,7 @@ class UserMessages(commands.Cog):
     
     def read_json(self):
         try:
-            with open(config.path + f'/json/userReactions.json', 'r') as myfile:
+            with open(config.path + '/json/userReactions.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return {}
@@ -78,16 +76,15 @@ class UserMessages(commands.Cog):
         js = self.data
         try:
             with open(config.path + '/json/userReactions.json', 'w') as myfile:
-                if not str(user.id) in js.keys():
+                if str(user.id) not in js.keys():
                     js[str(user.id)] = {}
-                if not on_msg in js[str(user.id)].keys():
+                if on_msg not in js[str(user.id)].keys():
                     js[str(user.id)][on_msg] = []
                 js[str(user.id)][on_msg].append(bot_reaction_msg)
                 json.dump(js, myfile)
         except FileNotFoundError:
-            file = open(config.path + '/json/userReactions.json', 'w')
-            file.write("{}")
-            file.close()
+            with open(config.path + '/json/userReactions.json', 'w') as file:
+                file.write("{}")
             self.add_in_json(user, on_msg, bot_reaction_msg)
         self.data = js
 
@@ -98,10 +95,9 @@ class UserMessages(commands.Cog):
                 del js[str(user.id)][key]
                 json.dump(js, myfile)
         except FileNotFoundError:
-            file = open(config.path + '/json/userReactions.json', 'w')
-            file.write("{}")
-            file.close()
+            with open(config.path + '/json/userReactions.json', 'w') as file:
+                file.write("{}")
         self.data = js
 
-def setup(bot):
-    bot.add_cog(UserMessages(bot))
+async def setup(bot):
+    await bot.add_cog(UserMessages(bot))

@@ -1,19 +1,15 @@
-import discord
-from discord.ext import commands
-from asyncio import futures
 import asyncio
-
+import datetime
 import json
 import random
+from asyncio import futures
 
 import discord
 from discord.ext import commands
-from discord.ext.commands.errors import CommandError
-from discord.ext.commands.errors import CheckFailure, CommandNotFound, NotOwner
-from discord.ext.commands.errors import MissingRequiredArgument
+from discord.ext.commands.errors import CommandNotFound, MissingRequiredArgument
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 
 
 class NoParticipant(commands.CheckFailure):
@@ -59,7 +55,7 @@ class Event(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not(message.channel.id == 693062821650497600 or message.channel.id == 707325921245266011):
+        if message.channel.id not in [693062821650497600, 707325921245266011]:
             return
         if message.author == self.bot.user:
             return
@@ -126,9 +122,9 @@ class Event(commands.Cog):
         e.description = "```fix\nAlle Teilnehmer haben eine Nachricht von Norman bekommen, in der erklärt wird, was nun zu tun ist."
         e.description += "\nWenn Wörter für jeden Teilnehmer gewählt wurden, beginnt das Spiel.```"
         e.description += "\nMomentan wird darauf gewartet, dass alle Teilnehmer ihre Wörter bekommen."
-        e.timestamp = datetime.datetime.utcnow()
+        e.timestamp = datetime.datetime.now()
         e.set_footer(text=self.bot.user.name,
-                     icon_url=self.bot.user.avatar_url)
+                     icon_url=self.bot.user.avatar)
 
         e.color = discord.Color.dark_purple()
         event_msg = await self.bot.get_channel(self.config["channel_id"]).send(embed=e)
@@ -183,9 +179,9 @@ Spaß haben oder so.
 Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein < Wort > oder < eine Phrase > übrig, also noch nicht erwähnt hat.
 ```"""
 
-            e.timestamp = datetime.datetime.utcnow()
+            e.timestamp = datetime.datetime.now()
             e.set_footer(text=self.bot.user.name,
-                         icon_url=self.bot.user.avatar_url)
+                         icon_url=self.bot.user.avatar)
             await self.bot.get_user(p).send(embed=e)
 
             e.title = "Zuteilung der Wörter"
@@ -214,9 +210,9 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
         async def choose_word(title, single_word):
             e = discord.Embed(title=title, color=discord.Color.purple())
             e.description = f"Gebe bitte (in den nächsten 180s) {title} ein.\n(Groß- und Kleinschreibung ist egal)"
-            e.timestamp = datetime.datetime.utcnow()
+            e.timestamp = datetime.datetime.now()
             e.set_footer(text=self.bot.user.name,
-                         icon_url=self.bot.user.avatar_url)
+                         icon_url=self.bot.user.avatar)
 
             await ctx.send(embed=e)
             try:
@@ -225,7 +221,7 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
                     if len(m.content.split()) != 1:
                         raise ValueError
                 return m.content
-            except futures.TimeoutError:
+            except asyncio.exceptions.TimeoutError:
                 await ctx.send(embed=simple_embed(ctx.author, "Timeout", "Bitte versuche es erneut.", color=discord.Color.red()))
             except ValueError:
                 await ctx.send(embed=simple_embed(ctx.author, "Kein Wort", "Du darfst nur ein Wort eingeben, bitte versuche es erneut.", color=discord.Color.red()))
@@ -247,9 +243,9 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
         e.description += f"\n`Wort 1: {w1}`"
         e.description += f"\n`Wort 2: {w2}`"
         e.description += f"\n`Phrase: {phrase}`"
-        e.timestamp = datetime.datetime.utcnow()
+        e.timestamp = datetime.datetime.now()
         e.set_footer(text=self.bot.user.name,
-                     icon_url=self.bot.user.avatar_url)
+                     icon_url=self.bot.user.avatar)
         m = await ctx.send(embed=e)
         cross = "\N{CROSS MARK}"
         await m.add_reaction(cross)
@@ -284,7 +280,7 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
         msg = await self.bot.get_channel(self.config["channel_id"]).fetch_message(self.config["event_message"])
         e = msg.embeds[0]
         if self.config["words_complete"]:
-            e.timestamp = datetime.datetime.utcnow()
+            e.timestamp = datetime.datetime.now()
             e.description = "Das Spiel beginnt!"
 
             participants = self.config["participants"]
@@ -332,5 +328,5 @@ def save_data(filename, data):
         file.close()
 
 
-def setup(bot):
+async def setup(bot):
     bot.add_cog(Event(bot))

@@ -11,7 +11,7 @@ import base64
 import gzip
 
 import config
-from helper_functions import *
+from helper_functions import simple_embed
 from bot import on_command_error
 
 class Schule(commands.Cog):
@@ -33,7 +33,7 @@ class Schule(commands.Cog):
         if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         # if the ctx.author has at least one course role, send it
-        kurse = getMyCourseRoleNames(ctx.author)
+        kurse = get_my_course_role_names(ctx.author)
         if len(kurse) > 0:
             await ctx.send(embed=simple_embed(ctx.author, "Deine Kurse: ", f"```{', '.join(kurse)}```"))
         # otherwise, inform the ctx.author that he does not have any course roles
@@ -52,15 +52,15 @@ class Schule(commands.Cog):
         # for all roles listed to add
         for arg in args:
             # if the role does not exist, create it
-            if arg not in getMyCourseRoleNames(ctx.guild):
-                await createCourseRole(ctx, arg)
+            if arg not in get_my_course_role_names(ctx.guild):
+                await create_course_role(ctx, arg)
             # if the ctx.author does not already have the role, add it
-            if arg not in getMyCourseRoleNames(ctx.author):
-                roleID = [r.id for r in getMyCourseRoles(
+            if arg not in get_my_course_role_names(ctx.author):
+                roleID = [r.id for r in get_my_course_roles(
                     ctx.guild) if r.name == arg][0]
                 await ctx.author.add_roles(ctx.guild.get_role(roleID))
 
-        kurse = getMyCourseRoleNames(ctx.author)
+        kurse = get_my_course_role_names(ctx.author)
         await ctx.send(embed=simple_embed(ctx.author, "Deine Kurse: ", f"```{', '.join(kurse)}```"))
 
     @commands.command(aliases=["rk"])
@@ -73,11 +73,11 @@ class Schule(commands.Cog):
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         for arg in args:
             # check if the ctx.author has the role that he wants to remove
-            if arg not in getMyCourseRoleNames(ctx.author):
+            if arg not in get_my_course_role_names(ctx.author):
                 await ctx.send(embed=simple_embed(ctx.author, "Du besitzt diese Kursrolle nicht.", color=discord.Color.red()))
                 return
             # get the role id by name
-            roleID = [r.id for r in getMyCourseRoles(
+            roleID = [r.id for r in get_my_course_roles(
                 ctx.guild) if r.name == arg][0]
             # get the role by the id
             role = ctx.guild.get_role(roleID)
@@ -94,7 +94,7 @@ class Schule(commands.Cog):
         if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         # if the ctx.author has at least no course role, tell him and return
-        kurse = getMyCourseRoleNames(ctx.author)
+        kurse = get_my_course_role_names(ctx.author)
         if len(kurse) == 0:
             await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Kurse ausgewählt. ",
                                                                "Verwende den command addKurse [kurs1 kurs2 ...] um mehr hinzuzufügen.\nBeispiel: ```addKurse EN4 PH1```\ngibt dir die Kursrollen EN4 und PH1."))
@@ -103,9 +103,9 @@ class Schule(commands.Cog):
         embed = discord.Embed(
             title="Dein persönlicher Vertretungsplan: ", color=ctx.author.color)
         embed.description = "`Stunde Art Kurs Lehrer Raum Bemerkungen`"
-        embed.timestamp = datetime.datetime.utcnow()
-        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
-        courses = getMyCourseRoleNames(ctx.author)
+        embed.timestamp = datetime.datetime.now()
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
+        courses = get_my_course_role_names(ctx.author)
 
         e = format_plan(plan, ctx.guild, embed, courses)
         await ctx.send(embed=e)
@@ -139,8 +139,8 @@ class Schule(commands.Cog):
             rmEmbed.description = "gelöschte Vertretungen"
             addedEmbed.description = "geänderte Vertretungen"
             server = channel.guild
-            rmEmbed.timestamp = datetime.datetime.utcnow()
-            addedEmbed.timestamp = datetime.datetime.utcnow()
+            rmEmbed.timestamp = datetime.datetime.now()
+            addedEmbed.timestamp = datetime.datetime.now()
             rmEmbed = format_plan(
                 removals, server, rmEmbed)
             addedEmbed = format_plan(
@@ -210,10 +210,10 @@ class Schulneuigkeiten(commands.Cog):
 
 
 
-def getMyCourseRoles(ctxAuthor):
+def get_my_course_roles(ctxAuthor):
     kurse = []
     # all course roles except the @everyone role
-    for r in ctxAuthor.roles[1:len(ctxAuthor.roles)]:
+    for r in ctxAuthor.roles[1:]:
         if config.ROLE_SEPERATOR_ID != r.id:
             kurse.append(r)
         else:
@@ -221,20 +221,20 @@ def getMyCourseRoles(ctxAuthor):
     return kurse
 
 
-def getMyCourseRoleNames(ctx):
-    return [c.name for c in getMyCourseRoles(ctx)]
+def get_my_course_role_names(ctx):
+    return [c.name for c in get_my_course_roles(ctx)]
 
 
-async def createCourseRole(ctx, name):
+async def create_course_role(ctx, name):
     await ctx.guild.create_role(name=name)
 
 
-def updateSubstitutionPlan(substitutionPlan):
+def update_substitution_plan(substitution_plan):
     with open(config.path + '/json/substitutionPlan.json', 'w') as myfile:
-        json.dump(substitutionPlan, myfile)
+        json.dump(substitution_plan, myfile)
 
 
-def getSubstitutionPlan():
+def getSubstitution_plan():
     with open(config.path + '/json/substitutionPlan.json', 'r') as myfile:
         return json.loads(myfile.read())
 
@@ -342,12 +342,12 @@ async def getCurrentSubstitutionPlan():
     newPlan[date2] = table2
     newPlan[date3] = table3
     
-    updateSubstitutionPlan(newPlan)
+    update_substitution_plan(newPlan)
     return (currentPlan, newPlan)
 
 def format_plan(plan, guild, embed, courses=[]):
     if courses == []:
-        courses = getMyCourseRoleNames(guild)
+        courses = get_my_course_role_names(guild)
     for date in list(plan.keys()):
         substitutions = []
         for i in range(len(plan[date])):

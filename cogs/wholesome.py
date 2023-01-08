@@ -68,9 +68,9 @@ class Wholesome(commands.Cog):
             return
         
         e = discord.Embed(title=f"**{arg.display_name}**, du wurdest von **{ctx.author.display_name}** {verb}", description=cat_ascii)
-        e.timestamp = datetime.datetime.utcnow()
+        e.timestamp = datetime.datetime.now()
         e.color = ctx.author.color
-        e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
         gifs = self.readJson(command)
         r = random.randint(0, 25 + len(gifs))
@@ -97,7 +97,7 @@ class Wholesome(commands.Cog):
         def is_gif(url):
             try:
                 r = requests.head(url)
-            except:
+            except BaseException:
                 return False
             if r.headers["content-type"] == "image/gif":
                 return True
@@ -131,9 +131,8 @@ class Wholesome(commands.Cog):
                 js.append(add)
                 json.dump(js, myfile)
         except FileNotFoundError:
-            file = open(config.path + f'/json/{name}.json', 'w')
-            file.write("[]")
-            file.close()
+            with open(config.path + f'/json/{name}.json', 'w') as file:
+                file.write("[]")
 
 
     @hug.error
@@ -153,5 +152,5 @@ class Wholesome(commands.Cog):
         embed.color = discord.Color.red()
         await ctx.send(embed=embed)
 
-def setup(bot):
-    bot.add_cog(Wholesome(bot))
+async def setup(bot):
+    await bot.add_cog(Wholesome(bot))

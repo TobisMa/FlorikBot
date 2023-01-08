@@ -1,18 +1,18 @@
-from asyncio import futures
-import discord
-from discord.embeds import _EmptyEmbed
-from discord.ext import commands
-
 import asyncio
+import contextlib
 import datetime
-import operator
-import validators
 import json
+import operator
 from collections import defaultdict
 
+import discord
+import validators
+from discord.ext import commands
+
 import config
-from helper_functions import *
 from bot import is_bot_dev, on_command_error
+from helper_functions import get_emoji, is_url_image, simple_embed
+
 
 def is_private_server():
     async def predicate(ctx):
@@ -32,9 +32,9 @@ class Memes(commands.Cog):
     #     voteList = getVoteList()
     #     e = discord.Embed()
     #     e.color = discord.Color.purple()
-    #     e.timestamp = datetime.datetime.utcnow()
-    #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
-    #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+    #     e.timestamp = datetime.datetime.now()
+    #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
+    #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar)
     #     if not len(voteList) > 0:
     #         e.title = "Gerade eben sind keine Memes vorhanden."
     #         await ctx.send(embed=e)
@@ -52,89 +52,83 @@ class Memes(commands.Cog):
     async def top(self, ctx):
         """Zeigt den Top-shitpost"""
         async with ctx.message.channel.typing():
-            deleteOldMessages()
-        voteList = getVoteList()
-        if(len(voteList) > 0):
-            vList = {}
-            for i in voteList.keys():
-                vList[i] = voteList[i][0]
-            sortedDict = sorted(
-                vList.items(), key=operator.itemgetter(1), reverse=True)
-            winnerMessage = await self.bot.get_channel(config.MEME_CHANNEL_ID).fetch_message(sortedDict[0][0])
-            score = voteList[sortedDict[0][0]][0]
+            delete_old_messages()
+        vote_list = get_vote_list()
+        if (len(vote_list) > 0):
+            v_list = {i: vote_list[i][0] for i in vote_list.keys()}
+            sorted_dict = sorted(
+                v_list.items(), key=operator.itemgetter(1), reverse=True)
+            winner_message = await self.bot.get_channel(config.MEME_CHANNEL_ID).fetch_message(sorted_dict[0][0])
+            score = vote_list[sorted_dict[0][0]][0]
             e = discord.Embed()
-            e.title = f"Der aktuell beliebteste Beitrag mit {str(score)} {getEmoji(self.bot, config.UPVOTE)}"
+            e.title = f"Der aktuell beliebteste Beitrag mit {str(score)} {get_emoji(self.bot, config.UPVOTE)}"
 
-            e.description = f"[Nachricht:]({winnerMessage.jump_url})"
-            if(len(winnerMessage.attachments) > 0):
-                e.set_image(url=winnerMessage.attachments[0].url)
-            e.set_author(name=winnerMessage.author,
-                         icon_url=winnerMessage.author.avatar_url)
-            e.color = winnerMessage.guild.get_member(
-                winnerMessage.author.id).colour
-            date = winnerMessage.created_at
-            e.description += "\n" + winnerMessage.content
-            e.timestamp = datetime.datetime.utcnow()
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+            e.description = f"[Nachricht:]({winner_message.jump_url})"
+            if(len(winner_message.attachments) > 0):
+                e.set_image(url=winner_message.attachments[0].url)
+            e.set_author(name=winner_message.author,
+                         icon_url=winner_message.author.avatar)
+            e.color = winner_message.guild.get_member(
+                winner_message.author.id).colour
+            date = winner_message.created_at
+            e.description += "\n" + winner_message.content
+            e.timestamp = datetime.datetime.now()
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
             await ctx.message.channel.send(embed=e)
-            if(len(winnerMessage.attachments) > 0):
-                if(not is_url_image(e.image.url)):
-                    await ctx.message.channel.send(winnerMessage.attachments[0].url)
+            if len(winner_message.attachments) > 0 and not is_url_image(e.image.url):
+                await ctx.message.channel.send(winner_message.attachments[0].url)
         else:
             await ctx.message.channel.send("Zurzeit sind keine Memes vorhanden.")
 
     @is_private_server()
     @commands.command()
     async def stats(self, ctx, *args):
-        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus
+        """Wertet die Bewertungen der Shitposts der einzelnen Nutzer aus.
             Dies wird aufgrund von discord rate limits lange dauern.
             Für jeden Nutzer werden Anzahl Memes, Anzahl upvotes/downvotes, upvote/downvote-Verhältnis sowie durchschnittliche upvotes/downvotes aufgelistet.
             \nAls optionale Parameter können zuerst Limit des Durchsuchens, dann auszuwertende Nutzer angegeben werden.
             \n`stats 200 @Florik3ks @Zuruniik` gibt die Daten für @Florik3ks und @Zuruniik während der letzten 200 Nachrichten (nicht Beiträge!) aus.
             \nOhne angegebene Personen werden die Daten von allen Personen, die Beiträge gepostet haben, aufgeführt.
             \nOhne ein angegebenes Nachrichtenlimit werden alle Beiträge ausgewertet."""
-        if len(args) > 0:
-            if not args[0].isnumeric() and len(ctx.message.mentions) == 0:
-                return
-        progressEmbed = discord.Embed(title="Nachrichten werden gelesen...")
-        progressEmbed.description = "Dies könnte (wird) eine recht lange Zeit in Anspruch nehmen."
-        progressEmbed.set_image(
-            url=getEmoji(self.bot, "KannaSip").url)
-        await ctx.send(embed=progressEmbed)
+        if args and not args[0].isnumeric() and len(ctx.message.mentions) == 0:
+            return
+        progress_embed = discord.Embed(title="Nachrichten werden gelesen...")
+        progress_embed.description = "Dies könnte (wird) eine recht lange Zeit in Anspruch nehmen."
+        progress_embed.set_image(url=get_emoji(self.bot, "KannaSip").url)
+        await ctx.send(embed=progress_embed)
         progress = 0
-        progressMsg = await ctx.send("`  0% fertig.`")
+        progress_msg = await ctx.send("`  0% fertig.`")
         last_edited = []
-        start_time = datetime.datetime.utcnow()
+        start_time = datetime.datetime.now()
         async with ctx.channel.typing():
             channel = self.bot.get_channel(config.MEME_CHANNEL_ID)
-            upvote = getEmoji(self.bot, config.UPVOTE)
-            downvote = getEmoji(self.bot, config.DOWNVOTE)
+            upvote = get_emoji(self.bot, config.UPVOTE)
+            downvote = get_emoji(self.bot, config.DOWNVOTE)
             members = defaultdict(lambda: defaultdict(int))
-            limit = None
-            if len(args) > 0 and args[0].isnumeric():
-                limit = int(args[0])
-            messageCount = limit if limit != None else len(await channel.history(limit=None).flatten())
+            limit = int(args[0]) if args and args[0].isnumeric() else None
+            message_count = limit if limit != None else len([a async for a in await channel.history(limit=None)])
+
             counter = 0
             async for m in channel.history(limit=limit):
                 counter += 1
 
-                oldProg = progress
-                progress = round(counter / messageCount * 100)
-                if progress != oldProg:
-                    time_now = datetime.datetime.utcnow()
+                old_prog = progress
+                progress = round(counter / message_count * 100)
+                if progress != old_prog:
+                    time_now = datetime.datetime.now()
                     if len(last_edited) >= 5:
                         if (time_now - last_edited[0]).seconds >= 5:
-                            await progressMsg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
+                            await progress_msg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
                             last_edited.pop(0)
                             last_edited.append(time_now)
                     else:
-                        await progressMsg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
+                        await progress_msg.edit(content=f"`{str(progress).rjust(3)}% fertig.`")
                         last_edited.append(time_now)
 
                 if len(m.reactions) > 0:
                     meme = False
                     for r in m.reactions:
-                        voters = await r.users().flatten()
+                        voters = [a async for a in r.users()]
                         count = r.count - 1 if self.bot.user in voters else r.count
                         if r.emoji == upvote:
                             members[m.author.id]["up"] += count
@@ -144,21 +138,20 @@ class Memes(commands.Cog):
                             meme = True
                     if meme:
                         members[m.author.id]["memes"] += 1
-            
-            end_time = str(datetime.datetime.utcnow() - start_time)
+
+            end_time = str(datetime.datetime.now() - start_time)
             # round milliseconds
-            end_time = end_time.split(".")[0] + "." + str(round(int(end_time.split(".")[1]), 2)) 
-            await progressMsg.edit(content=f"`Bearbeitung in {end_time} abgeschlossen.`")
+            end_time = end_time.split(".")[0] + "." + str(round(int(end_time.split(".")[1]), 2))
+            await progress_msg.edit(content=f"`Bearbeitung in {end_time} abgeschlossen.`")
 
             e = discord.Embed(title="Stats", color=ctx.author.color,
-                              timestamp=datetime.datetime.utcnow())
-            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+                              timestamp=datetime.datetime.now())
+            e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
 
-            for member_id in members.keys():
-                if len(ctx.message.mentions) > 0:
-                    if member_id not in [u.id for u in ctx.message.mentions]:
-                        continue
-                if members[member_id] == {}:
+            for member_id, value_ in members.items():
+                if len(ctx.message.mentions) > 0 and member_id not in [u.id for u in ctx.message.mentions]:
+                    continue
+                if value_ == {}:
                     continue
                 if members[member_id]["memes"] == 0:
                     continue
@@ -166,8 +159,7 @@ class Memes(commands.Cog):
                 up = members[member_id]['up']
                 down = members[member_id]['down']
                 total = members[member_id]['memes']
-                ratio = round(
-                    up / down, 2) if down > 0 else up if up > 0 else 1
+                ratio = round(up / down, 2) if down > 0 else max(up, 1)
                 dvratio = "1"  # if down > 0 else "0"
                 members[member_id]["ratio"] = ratio
                 e.add_field(name=member.display_name, value=f"Anzahl der Beiträge: `{members[member_id]['memes']}`\n" +
@@ -187,17 +179,17 @@ class Memes(commands.Cog):
         await ctx.send(embed=e)
 
         ## Leaderboard ##
-        l = discord.Embed(title="Leaderboard (Up-/Downvote Verhältnis)",
-                          color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
+        l = discord.Embed(
+            title="Leaderboard (Up-/Downvote Verhältnis)",
+            color=discord.Color.gold(),
+            timestamp=datetime.datetime.now()
+        )
 
-        ratioLeaderboard = []
+        ratio_leaderboard = [[v["ratio"], k] for k, v in members.items()]
 
-        for k in members.keys():
-            ratioLeaderboard.append([members[k]["ratio"], k])
+        ratio_leaderboard.sort(reverse=True)
 
-        ratioLeaderboard.sort(reverse=True)
-
-        for r in ratioLeaderboard:
+        for r in ratio_leaderboard:
             member = self.bot.get_guild(config.SERVER_ID).get_member(r[1])
             l.add_field(name=member.display_name, value=str(r[0]))
 
@@ -211,22 +203,19 @@ class Memes(commands.Cog):
             await self.addVotes(message)
 
     async def addVotes(self, message):
-        up = getEmoji(self.bot, config.UPVOTE)
-        down = getEmoji(self.bot, config.DOWNVOTE)
+        up = get_emoji(self.bot, config.UPVOTE)
+        down = get_emoji(self.bot, config.DOWNVOTE)
         await message.add_reaction(up)
         await message.add_reaction(down)
         cross = "\N{CROSS MARK}"
         await message.add_reaction(cross)
-        try:
+        
+        with contextlib.suppress(asyncio.exceptions.TimeoutError):  # don't even know if it does work. Was a extension's suggestion
             reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == message.author and _reaction.emoji == cross and _reaction.message == message)
             await message.clear_reaction(up)
             await message.clear_reaction(down)
-        except asyncio.TimeoutError:
-            pass
-        try:
+        with contextlib.suppress(discord.errors.NotFound): # don't even know if it does work. Was a extension's suggestion
             await message.clear_reaction(cross)
-        except discord.errors.NotFound:
-            pass
         
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -238,38 +227,36 @@ class Memes(commands.Cog):
         msg = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
         reaction = None
         for reac in msg.reactions:
-            if reac.emoji == payload.emoji.name or reac.emoji == payload.emoji:
+            if reac.emoji in [payload.emoji.name, payload.emoji]:
                 reaction = reac
-        if reaction == None:
+        if reaction is None:
             return
 
         # get up-/downvote emojis
-        upvote = getEmoji(self.bot, config.UPVOTE)
-        downvote = getEmoji(self.bot, config.DOWNVOTE)
+        upvote = get_emoji(self.bot, config.UPVOTE)
+        downvote = get_emoji(self.bot, config.DOWNVOTE)
         if user != self.bot.user:
             # in case the message author tries to up-/downvote their own post
-            if reaction.message.author == user and (reaction.emoji == upvote or reaction.emoji == downvote):
+            if reaction.message.author == user and reaction.emoji in [upvote, downvote]:
                 await reaction.remove(user)
                 errormsg = await reaction.message.channel.send(f"{user.mention} Du darfst für deinen eigenen Beitrag nicht abstimmen.")
-                deleteEmoji = getEmoji(
+                delete_emoji = get_emoji(
                     self.bot, config.UNDERSTOOD_EMOJI)
-                await errormsg.add_reaction(deleteEmoji)
-                try:
-                    reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == user and _reaction.emoji == deleteEmoji)
-                except futures.TimeoutError:
-                    pass
+                await errormsg.add_reaction(delete_emoji)
+                with contextlib.suppress(asyncio.exceptions.TimeoutError):
+                    reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=lambda _reaction, _user: _user == user and _reaction.emoji == delete_emoji)
                 await errormsg.delete()
                 return
 
             # change voting counter
             if reaction.emoji == upvote:
-                changeVotingCounter(reaction.message, 1)
+                change_voting_counter(reaction.message, 1)
                 # pin message when it has the specified amount of upvotes
                 if reaction.count - 1 >= config.REQUIRED_UPVOTES_FOR_GOOD_MEME:
                     # await reaction.message.pin(reason="good meme")
                     await self.send_good_meme(reaction.message)
             elif reaction.emoji == downvote:
-                changeVotingCounter(reaction.message, -1)
+                change_voting_counter(reaction.message, -1)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -281,16 +268,16 @@ class Memes(commands.Cog):
         msg = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
         reaction = None
         for reac in msg.reactions:
-            if reac.emoji == payload.emoji.name or reac.emoji == payload.emoji:
+            if reac.emoji in [payload.emoji.name, payload.emoji]:
                 reaction = reac
-        if reaction == None:
+        if reaction is None:
             return
         # change voting counter
-        if user != self.bot.user and user != reaction.message.author:
-            if reaction.emoji == getEmoji(self.bot, config.UPVOTE):
-                changeVotingCounter(reaction.message, -1)
-            elif reaction.emoji == getEmoji(self.bot, config.DOWNVOTE):
-                changeVotingCounter(reaction.message, 1)
+        if user not in [self.bot.user, reaction.message.author]:
+            if reaction.emoji == get_emoji(self.bot, config.UPVOTE):
+                change_voting_counter(reaction.message, -1)
+            elif reaction.emoji == get_emoji(self.bot, config.DOWNVOTE):
+                change_voting_counter(reaction.message, 1)
 
     async def send_good_meme(self, msg, force=False):
         if not force:
@@ -313,19 +300,18 @@ class Memes(commands.Cog):
             m = await c.fetch_message(msg.reference.message_id)
             e.description += f"[Bezieht sich auf ...]({m.jump_url})\n"
         e.set_author(name=msg.author,
-                     icon_url=msg.author.avatar_url)
+                     icon_url=msg.author.avatar)
         e.color = msg.guild.get_member(
             msg.author.id).colour
         e.description += "\n" + msg.content
         e.timestamp = msg.created_at
-        e.set_footer(text=msg.author.name, icon_url=msg.author.avatar_url)
+        e.set_footer(text=msg.author.name, icon_url=msg.author.avatar)
 
-        if(len(msg.attachments) > 0):
-            if(is_url_image(msg.attachments[0].url)):
+        if len(msg.attachments) > 0:
+            if is_url_image(msg.attachments[0].url):
                 e.set_image(url=msg.attachments[0].url)
-
                 counter = 0
-                while isinstance(e.image, _EmptyEmbed) or e.image.width == 0 and counter < 100:
+                while e.image is None or e.image.width == 0 and counter < 100:
                     counter += 1
                     e.set_image(url=msg.attachments[0].url)
                 if counter == 100:
@@ -353,42 +339,42 @@ class Memes(commands.Cog):
         msg = await self.bot.get_channel(config.MEME_CHANNEL_ID).fetch_message(msgid)
         await self.send_good_meme(msg, True)
 
-def updateVoteListFile(voteList):
+def update_vote_list_file(vote_list):
     with open(config.path + '/json/voteList.json', 'w') as myfile:
-        json.dump(voteList, myfile)
+        json.dump(vote_list, myfile)
 
 
-def getVoteList():
+def get_vote_list():
     with open(config.path + '/json/voteList.json', 'r') as myfile:
         return json.loads(myfile.read())
 
 
-def changeVotingCounter(message, amountToChange):
-    voteList = getVoteList()
-    if not str(message.id) in list(voteList.keys()):
-        voteList[str(message.id)] = (amountToChange, str(message.created_at))
-        updateVoteListFile(voteList)
+def change_voting_counter(message, amountToChange):
+    vote_list = get_vote_list()
+    if str(message.id) not in list(vote_list.keys()):
+        vote_list[str(message.id)] = (amountToChange, str(message.created_at))
+        update_vote_list_file(vote_list)
         return
-    voteList[str(message.id)] = (voteList[str(message.id)][0] +
-                                 amountToChange, voteList[str(message.id)][1])
-    updateVoteListFile(voteList)
+    vote_list[str(message.id)] = (vote_list[str(message.id)][0] +
+                                 amountToChange, vote_list[str(message.id)][1])
+    update_vote_list_file(vote_list)
 
 
-def deleteOldMessages():
-    voteList = getVoteList()
-    keys = list(voteList.keys())
-    timeNow = datetime.datetime.today()
-    for messageID in keys:
+def delete_old_messages():
+    vote_list = get_vote_list()
+    keys = list(vote_list.keys())
+    time_now = datetime.datetime.today()   # FIXME find a solution
+    for message_id in keys:
         try:
-            days = (timeNow - datetime.datetime.strptime(voteList[messageID][1], '%Y-%m-%d %H:%M:%S.%f')).days
+            days = (time_now - datetime.datetime.strptime(vote_list[message_id][1], '%Y-%m-%d %H:%M:%S.%f')).days
         except ValueError:
-            days = (timeNow - datetime.datetime.strptime(voteList[messageID][1], '%Y-%m-%d %H:%M:%S')).days
-        if days > config.DELETE_AFTER_DAYS:
-            if messageID in keys:
-                voteList.pop(messageID)
+            days = (time_now - datetime.datetime.strptime(vote_list[message_id][1], '%Y-%m-%d %H:%M:%S')).days
+            
+        if days > config.DELETE_AFTER_DAYS and message_id in keys:
+            vote_list.pop(message_id)
 
-    updateVoteListFile(voteList)
+    update_vote_list_file(vote_list)
 
 
-def setup(bot):
-    bot.add_cog(Memes(bot))
+async def setup(bot):
+    await bot.add_cog(Memes(bot))

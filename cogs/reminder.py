@@ -47,7 +47,7 @@ class Erinnerungen(commands.Cog):
         self.bot = bot
         self.checkReminder.start()
 
-    @app_commands.command(name="reminder", description="erschafft einen Reminder nach relativer Zeitangabe")
+    @app_commands.command(name="reminder", description="Erschafft einen Reminder")
     @app_commands.describe(zeit="Zeitangabe für die Erinnerung", typ="Zeitformat", zugriff="Sichtbarkeit der Erinnerung", nachricht="Erinnerungsnachricht")
     @app_commands.choices(typ=[
             app_commands.Choice(name="relative Zeitangabe (5min)", value="relative"),

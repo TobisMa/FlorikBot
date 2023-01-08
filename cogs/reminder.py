@@ -249,6 +249,8 @@ class Erinnerungen(commands.Cog):
                         channel = self.bot.get_user(rem.users[0])
                     time = datetime.datetime.strptime(rem.date, '%d.%m.%Y %H:%M')
                     if time <= now:
+                        content = self.bot.get_user(rem.author).mention
+                        color = discord.Color.blurple()
                         if not isinstance(channel, discord.User):
                             guild = channel.guild
                             # guild = self.bot.get_guild(config.SERVER_ID)
@@ -256,9 +258,6 @@ class Erinnerungen(commands.Cog):
                                 content = "" + ' '.join([guild.get_role(role).mention for role in rem.roles])
                                 content += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
                                 color = guild.get_member(rem.author).color
-                        else:
-                            content = self.bot.get_user(rem.author).mention
-                            color = discord.Color.blurple()
                         embed = simple_embed(self.bot.get_user(rem.author), "Erinnerung", rem.message, color=color)
 
                         remove_new_reminder(rem.author, rem)

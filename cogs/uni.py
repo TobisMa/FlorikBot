@@ -52,7 +52,7 @@ class Uni(commands.Cog):
         ]
     
 
-        
+    @is_in_uni_server()
     @app_commands.command(name="update_subject", description="Aktualisiert den Stand eines angegebenen Fachs")
     @app_commands.describe(
         subject="Fach, welches aktualisiert werden soll",

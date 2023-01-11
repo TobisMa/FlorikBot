@@ -6,6 +6,8 @@ from helper_functions import simple_embed
 import json
 import config
 from bot import is_bot_dev, on_command_error
+from discord import app_commands
+from typing import List, Optional
 
 
 class Uni(commands.Cog):
@@ -23,6 +25,78 @@ class Uni(commands.Cog):
             return possible_member in guild.members
 
         return commands.check(predicate)
+
+   
+    
+    @app_commands.command(name="vorlesungsstand", description="Zeigt den momentanen Vorlesungsstand an")
+    async def get_vorlesungsstand_nosync(self, interaction: discord.Interaction):
+        if "subjects" not in self.data.keys():
+            e = simple_embed(interaction.user, "Es stehen keine Daten zur Verfügung", color=discord.Color.red())
+            await interaction.response.send_message(embed=e, ephemeral=True)
+            return
+
+        e = discord.Embed(title="Vorlesungsstand", color=discord.Color.blurple())
+        description = ""
+        for subject in self.data["subjects"]:
+            current = self.data['subjects'][subject]['current']
+            timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
+            description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
+        e.description = description
+        await interaction.response.send_message(embed=e, ephemeral=True)
+
+
+    async def update_subject_autocomplete(self,interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
+        choices = self.data["subjects"]
+        return [
+            app_commands.Choice(name=choice, value=choice) for choice in choices if current.lower() in choice.lower()
+        ]
+    
+
+        
+    @app_commands.command(name="update_subject", description="Aktualisiert den Stand eines angegebenen Fachs")
+    @app_commands.describe(
+        subject="Fach, welches aktualisiert werden soll",
+        new_state="Neuer Stand des Faches", 
+        timestamp="Zeitpunkt der Aktualisierung im Format dd.mm.yyyy"
+    )
+    @app_commands.autocomplete(subject=update_subject_autocomplete)
+    @app_commands.rename(new_state="neuer_stand", subject="fach", timestamp="zeitpunkt")
+    async def update_subject(self, interaction: discord.Interaction, subject: str, new_state: str, timestamp: Optional[str]):
+        if "subjects" not in self.data.keys():
+            e = simple_embed(interaction.user, "Es stehen keine Fächer zur Verfügung, die aktualisiert werden können", color=discord.Color.red())
+            await interaction.response.send_message(embed=e, ephemeral=True)
+            return
+        if subject not in self.data["subjects"]:
+            e = simple_embed(interaction.user, f"Das Fach `{subject}` existiert nicht", color=discord.Color.red())
+            await interaction.response.send_message(embed=e, ephemeral=True)
+            return
+
+        if(timestamp):
+            try:
+                timestamp = datetime.datetime.strptime(timestamp, '%d.%m.%Y').timestamp()
+            except ValueError as ex:
+                e = simple_embed(interaction.user, ex.args[0], color=discord.Color.red())
+                await interaction.response.send_message(embed=e, ephemeral=True)
+                return
+        else:
+            timestamp = time()
+             
+        start = self.findLastEnd(subject)
+        
+        self.data["subjects"][subject]["current"] = (new_state, timestamp)
+        self.data["subjects"][subject]["history"].append(
+            {
+                "time": timestamp,
+                "start": start,
+                "end": new_state
+            }
+        )
+        await self.update_message()
+        update_data(self.data)
+        
+        e = simple_embed(interaction.user, f"Das Fach {subject} wurde erfolgreich aktualisiert", color=discord.Color.green())
+        await interaction.response.send_message(embed=e, ephemeral=True)
+        
 
     @is_in_uni_server()
     @commands.command(aliases=["vls"])
@@ -146,4 +220,7 @@ def get_data():
 
 
 async def setup(bot):
-    await bot.add_cog(Uni(bot))
+    if(config.GUILDS):
+        await bot.add_cog(Uni(bot), guilds=config.GUILDS)
+    else:
+        await bot.add_cog(Uni(bot))

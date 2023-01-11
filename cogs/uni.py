@@ -25,6 +25,19 @@ class Uni(commands.Cog):
             return possible_member in guild.members
 
         return commands.check(predicate)
+    
+    @staticmethod
+    def is_in_uni_server_interaction_check():
+        async def predicate(interaction: discord.Interaction) -> bool:
+            guild = interaction.client.get_guild(config.UNI_GUILD)
+            if interaction.user in guild.members:
+                return True
+            else:
+                e = simple_embed(interaction.user, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red())
+                await interaction.response.send_message(embede=e, ephemeral=True)
+                return False 
+        
+        return app_commands.check(predicate)
 
    
     
@@ -52,7 +65,7 @@ class Uni(commands.Cog):
         ]
     
 
-    @is_in_uni_server()
+    @is_in_uni_server_interaction_check()
     @app_commands.command(name="update_subject", description="Aktualisiert den Stand eines angegebenen Fachs")
     @app_commands.describe(
         subject="Fach, welches aktualisiert werden soll",

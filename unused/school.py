@@ -1,8 +1,10 @@
+from typing import Any, Dict, List
 import discord
 from discord.ext import commands
 from discord.ext import tasks
 
 import asyncio
+import contextlib
 import datetime
 import json
 from bs4 import BeautifulSoup
@@ -11,7 +13,7 @@ import base64
 import gzip
 
 import config
-from helper_functions import simple_embed
+from helper_functions import simple_embed, update_config
 from bot import on_command_error
 
 class Schule(commands.Cog):
@@ -30,7 +32,7 @@ class Schule(commands.Cog):
     async def kurse(self, ctx):
         """Listet alle Kurse eines Nutzers auf"""
         # give the ctx.author the course seperator role if he does not have it already
-        if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
+        if config.ROLE_SEPERATOR_ID not in [c . id for c in ctx . author . roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         # if the ctx.author has at least one course role, send it
         kurse = get_my_course_role_names(ctx.author)
@@ -47,7 +49,7 @@ class Schule(commands.Cog):
             beispiel: `,addkurse MA1 IN2 de2 mu1`"""
         args = args.split(" ")
         # give the ctx.author the course seperator role if he does not have it already
-        if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
+        if config.ROLE_SEPERATOR_ID not in [c.id for c in ctx.author.roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         # for all roles listed to add
         for arg in args:
@@ -56,9 +58,9 @@ class Schule(commands.Cog):
                 await create_course_role(ctx, arg)
             # if the ctx.author does not already have the role, add it
             if arg not in get_my_course_role_names(ctx.author):
-                roleID = [r.id for r in get_my_course_roles(
+                role_id = [r.id for r in get_my_course_roles(
                     ctx.guild) if r.name == arg][0]
-                await ctx.author.add_roles(ctx.guild.get_role(roleID))
+                await ctx.author.add_roles(ctx.guild.get_role(role_id))
 
         kurse = get_my_course_role_names(ctx.author)
         await ctx.send(embed=simple_embed(ctx.author, "Deine Kurse: ", f"```{', '.join(kurse)}```"))
@@ -69,7 +71,7 @@ class Schule(commands.Cog):
             beispiel: `,removeKurse MA1 IN2 de2 mu1`"""
         args = args.split(" ")
         # give the ctx.author the course seperator role if he does not have it already
-        if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
+        if config.ROLE_SEPERATOR_ID not in [c.id for c in ctx.author.roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         for arg in args:
             # check if the ctx.author has the role that he wants to remove
@@ -77,10 +79,10 @@ class Schule(commands.Cog):
                 await ctx.send(embed=simple_embed(ctx.author, "Du besitzt diese Kursrolle nicht.", color=discord.Color.red()))
                 return
             # get the role id by name
-            roleID = [r.id for r in get_my_course_roles(
+            role_id = [r.id for r in get_my_course_roles(
                 ctx.guild) if r.name == arg][0]
             # get the role by the id
-            role = ctx.guild.get_role(roleID)
+            role = ctx.guild.get_role(role_id)
             await ctx.author.remove_roles(role)
             # delete the role if no members have it now
             if len(role.members) == 0:
@@ -91,7 +93,7 @@ class Schule(commands.Cog):
     async def myplan(self, ctx):
         """Zeigt den personalisierten Vertretungsplan des Nutzers an"""
         # give the ctx.author the course seperator role if he does not have it already
-        if not config.ROLE_SEPERATOR_ID in [c.id for c in ctx.author.roles]:
+        if config.ROLE_SEPERATOR_ID not in [c.id for c in ctx.author.roles]:
             await ctx.author.add_roles(ctx.guild.get_role(config.ROLE_SEPERATOR_ID))
         # if the ctx.author has at least no course role, tell him and return
         kurse = get_my_course_role_names(ctx.author)
@@ -99,7 +101,7 @@ class Schule(commands.Cog):
             await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Kurse ausgewählt. ",
                                                                "Verwende den command addKurse [kurs1 kurs2 ...] um mehr hinzuzufügen.\nBeispiel: ```addKurse EN4 PH1```\ngibt dir die Kursrollen EN4 und PH1."))
             return
-        plan = getSubstitutionPlan()
+        plan = get_substitution_plan()
         embed = discord.Embed(
             title="Dein persönlicher Vertretungsplan: ", color=ctx.author.color)
         embed.description = "`Stunde Art Kurs Lehrer Raum Bemerkungen`"
@@ -114,47 +116,45 @@ class Schule(commands.Cog):
 
     @tasks.loop(seconds=300)
     async def update_substitution_plan(self):
-        currentPlan, newPlan = await getCurrentSubstitutionPlan()
+        current_plan, new_plan = await get_current_substitution_plan()
         try:
             additions = {}
             removals = {}
-            for date in newPlan.keys():
+            for date in new_plan.keys():
                 additions[date] = []
                 removals[date] = []
-                if date not in currentPlan.keys():
-                    additions[date] = newPlan[date]
+                if date not in current_plan.keys():
+                    additions[date] = new_plan[date]
                 else:
-                    for k in newPlan[date]:
-                        if k not in currentPlan[date]:
+                    for k in new_plan[date]:
+                        if k not in current_plan[date]:
                             additions[date].append(k)
-                    for k in currentPlan[date]:
-                        if k not in newPlan[date]:
+                    for k in current_plan[date]:
+                        if k not in new_plan[date]:
                             removals[date].append(k)
             channel = self.bot.get_channel(config.PLAN_CHANNEL)
 
-            rmEmbed = discord.Embed(
+            rm_embed = discord.Embed(
                 title="Entfernt", color=discord.Color.red())
-            addedEmbed = discord.Embed(
+            added_embed = discord.Embed(
                 title="Neu hinzugefügt", color=discord.Color.green())
-            rmEmbed.description = "gelöschte Vertretungen"
-            addedEmbed.description = "geänderte Vertretungen"
+            rm_embed.description = "gelöschte Vertretungen"
+            added_embed.description = "geänderte Vertretungen"
             server = channel.guild
-            rmEmbed.timestamp = datetime.datetime.now()
-            addedEmbed.timestamp = datetime.datetime.now()
-            rmEmbed = format_plan(
-                removals, server, rmEmbed)
-            addedEmbed = format_plan(
-                additions, server, addedEmbed)
+            rm_embed.timestamp = datetime.datetime.now()
+            added_embed.timestamp = datetime.datetime.now()
+            rm_embed = format_plan(
+                removals, server, rm_embed)
+            added_embed = format_plan(
+                additions, server, added_embed)
 
-            if len(rmEmbed.fields) > 0:
-                await channel.send(embed=rmEmbed)
-            if len(addedEmbed.fields) > 0:
-                await channel.send(embed=addedEmbed)
+            if len(rm_embed.fields) > 0:
+                await channel.send(embed=rm_embed)
+            if len(added_embed.fields) > 0:
+                await channel.send(embed=added_embed)
         except Exception as e:
-            try:
+            with contextlib.suppress(Exception):
                 await on_command_error(self.bot.get_channel(config.LOG_CHANNEL_ID), e)
-            except Exception:
-                pass
 
     @update_substitution_plan.before_loop
     async def before_substitution_plan(self):
@@ -210,10 +210,10 @@ class Schulneuigkeiten(commands.Cog):
 
 
 
-def get_my_course_roles(ctxAuthor):
+def get_my_course_roles(ctx_author) -> List:
     kurse = []
     # all course roles except the @everyone role
-    for r in ctxAuthor.roles[1:]:
+    for r in ctx_author.roles[1:]:
         if config.ROLE_SEPERATOR_ID != r.id:
             kurse.append(r)
         else:
@@ -234,7 +234,7 @@ def update_substitution_plan(substitution_plan):
         json.dump(substitution_plan, myfile)
 
 
-def getSubstitution_plan():
+def get_substitution_plan():
     with open(config.path + '/json/substitutionPlan.json', 'r') as myfile:
         return json.loads(myfile.read())
 
@@ -278,11 +278,11 @@ async def get_plan_urls(username, password):
                         return list(map(lambda plan: plan['Detail'], child2['Childs']))
             return []
 
-async def getCurrentSubstitutionPlan():
+async def get_current_substitution_plan():
     async def get_only_grade_n(iterable, n):
         list_of_items_to_remove = []
         # geht die Liste durch, und schaut, welche einträge nicht zur n. Klasse gehören und merkt sich diese
-        for element in iterable[0: len(iterable) - 1][0]:
+        for element in iterable[:-1][0]:
             if(element["Klasse"] != n):
                 list_of_items_to_remove.append(element)
         # löscht die elemente, welche er sich gemerkt hat
@@ -300,20 +300,21 @@ async def getCurrentSubstitutionPlan():
                     table_even = soup.find_all("tr", class_="list even")
                     rows = []
                     for line in table_odd:
-                        kurs = zeile_to_Dict(line.find_all("td", class_="list"))
+                        kurs = zeile_to_dict(line.find_all("td", class_="list"))
                         rows.append(kurs)
                     for line in table_even:
-                        kurs = zeile_to_Dict(line.find_all("td", class_="list"))
+                        kurs = zeile_to_dict(line.find_all("td", class_="list"))
                         rows.append(kurs)
                     date = soup.find("div", class_="mon_title")
-                    if(date == None):
+                    if date is None:
                         date = "11.11.2011 kein Datum vorhanden [Fehler]"
                     else:
                         date = date.text
                     return (rows, date)
 
 
-    def zeile_to_Dict(zeile):
+
+    def zeile_to_dict(zeile) -> Dict[str, Any]:
         kurs = {}
         kurs["Klasse"] = zeile[0].text
         kurs["Stunde"] = zeile[1].text
@@ -325,25 +326,25 @@ async def getCurrentSubstitutionPlan():
         kurs["Bemerkungen"] = zeile[7].text
         return kurs
 
-    currentPlan = getSubstitutionPlan()
+    current_plan = getSubstitutionPlan()  # FIXME `getSubstitutionPlan` is not existing
     try:
         url1,url2,url3 = (await get_plan_urls(config.PLAN_USERNAME, config.PLAN_PW))
     except ValueError:
-        return (currentPlan, currentPlan)
-    
+        return (current_plan, current_plan)
+
 
     # remove everything and get the newest substitution plan data
 
-    newPlan = {}
+    new_plan = {}
     table1, date1 = await get_only_grade_n(await extract_table_from_site(url1), "12")
     table2, date2 = await get_only_grade_n(await extract_table_from_site(url2), "12")
     table3, date3 = await get_only_grade_n(await extract_table_from_site(url3), "12")
-    newPlan[date1] = table1
-    newPlan[date2] = table2
-    newPlan[date3] = table3
-    
-    update_substitution_plan(newPlan)
-    return (currentPlan, newPlan)
+    new_plan[date1] = table1
+    new_plan[date2] = table2
+    new_plan[date3] = table3
+
+    update_substitution_plan(new_plan)
+    return (current_plan, new_plan)
 
 def format_plan(plan, guild, embed, courses=[]):
     if courses == []:
@@ -363,21 +364,21 @@ def format_plan(plan, guild, embed, courses=[]):
 
         # get the max field length for all substitutions
         length = [0, 0, 0, 0, 0, 0]
-        for i in range(len(substitutions)):
+        for substitution in substitutions:
             # j is the length index
             j = 0
-            for k in list(substitutions[i].keys()):
+            for k in list(substitution.keys()):
                 if k == "altes_Fach":
-                    if substitutions[i]["altes_Fach"] in courses:
-                        substitutions[i][k] = substitutions[i]["altes_Fach"]
-                    elif substitutions[i]["neues_Fach"] in courses:
-                        substitutions[i][k] = substitutions[i]["neues_Fach"]
-                elif k == "neues_Fach" or k == "Klasse":
+                    if substitution["altes_Fach"] in courses:
+                        substitution[k] = substitution["altes_Fach"]
+                    elif substitution["neues_Fach"] in courses:
+                        substitution[k] = substitution["neues_Fach"]
+                elif k in ["neues_Fach", "Klasse"]:
                     continue
 
-                length[j] = max(length[j], len(substitutions[i][k]))
+                length[j] = max(length[j], len(substitution[k]))
                 j += 1
-            
+
         # sort substitutions by time of lesson
         substitutions = sorted(
             substitutions, key=lambda k: k['Stunde'].split()[0])
@@ -389,7 +390,7 @@ def format_plan(plan, guild, embed, courses=[]):
             j = 0
             result += "`"
             for k in list(substitutions[i].keys()):
-                if k == "neues_Fach" or k == "Klasse":
+                if k in ["neues_Fach", "Klasse"]:
                     continue
                 # stretch the strings if needed
                 substitutions[i][k] = substitutions[i][k].ljust(length[j])

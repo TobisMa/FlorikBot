@@ -32,11 +32,11 @@ class Uni(commands.Cog):
             guild = interaction.client.get_guild(config.UNI_GUILD)
             if interaction.user in guild.members:
                 return True
-            else:
-                e = simple_embed(interaction.user, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red())
-                await interaction.response.send_message(embede=e, ephemeral=True)
-                return False 
-        
+            
+            e = simple_embed(interaction.user, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red())
+            await interaction.response.send_message(embed=e, ephemeral=True)
+            return False 
+
         return app_commands.check(predicate)
 
    

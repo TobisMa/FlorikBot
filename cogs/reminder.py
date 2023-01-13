@@ -84,15 +84,12 @@ class Erinnerungen(commands.Cog):
                 e = simple_embed(interaction.user, "Das eingegebene Zeitformat entspricht nicht dem Muster `dd.MM.yyyy hh:mm`", color=discord.Color.red())
                 await interaction.response.send_message(embed=e, ephemeral=True)
                 return
-        
+
         time = time.strftime('%d.%m.%Y %H:%M')
-        if user:
-            user = user.id
-        else:
-            user = interaction.user.id
+        user = user.id if user else interaction.user.id
         r = Reminder(interaction.user.id, time, nachricht, [user], [], is_private=is_private, channel=interaction.channel_id)
         e = simple_embed(interaction.user, f"Glückwunsch, deine Erinnerung für {time} wurde erfolgreich gespeichert.")
-        add_new_reminder(r) 
+        add_new_reminder(r)
         await interaction.response.send_message(embed=e, ephemeral=is_private)
         
 
@@ -551,7 +548,7 @@ def add_new_reminder(r):
     json_string = json.dumps(r.__dict__)
     reminder = get_reminder()
     authors = list(reminder.keys())
-    if not str(r.author) in authors:
+    if str(r.author) not in authors:
         reminder[str(r.author)] = []
     reminder[str(r.author)].append(json_string)
     update_reminder(reminder)
@@ -577,18 +574,18 @@ def get_reminder():
 def add_reminder(author, recipient, time, message):
     reminder = get_reminder()
     recipients = list(reminder.keys())
-    if not str(recipient) in recipients:
+    if str(recipient) not in recipients:
         reminder[str(recipient)] = []
     reminder[str(recipient)].append([time, message, author])
     update_reminder(reminder)
 
 
-def remove_reminder(recipientID, time, message, author):
+def remove_reminder(recipient_id, time, message, author):
     reminder = get_reminder()
     recipients = list(reminder.keys())
-    if str(recipientID) in recipients:
-        if [time, message, author] in reminder[str(recipientID)]:
-            reminder[str(recipientID)].pop(reminder[str(recipientID)].index([time, message, author]))
+    if str(recipient_id) in recipients:
+        if [time, message, author] in reminder[str(recipient_id)]:
+            reminder[str(recipient_id)].pop(reminder[str(recipient_id)].index([time, message, author]))
     update_reminder(reminder)
 
 

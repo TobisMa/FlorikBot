@@ -138,15 +138,15 @@ class Event(commands.Cog):
         unmatched = list(self.config["participants"])  # copy
         # create empty dicts
         for p in participants:
-            data[str(p)] = {}
-            data[str(p)]["word1"] = ""
-            data[str(p)]["word2"] = ""
-            data[str(p)]["phrase"] = ""
-            data[str(p)]["word1_found"] = False
-            data[str(p)]["word2_found"] = False
-            data[str(p)]["phrase_found"] = False
-            data[str(p)]["placement"] = len(participants)
-
+            data[str(p)] = {
+                "word1": "",
+                "word2": "",
+                "phrase": "",
+                "word1_found": False,
+                "word2_found": False,
+                "phrase_found": False,
+                "placement": len(participants),
+            }
         for p in participants:
             author = random.choice(unmatched)
             while author == p:
@@ -201,9 +201,13 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
     @commands.command()
     async def words(self, ctx):
         self.update_data()
-        author = self.data[str(ctx.author.id)]
+        author = self.data[str(ctx.author.id)]  # TODO unused variable
         user = self.data[str(ctx.author.id)]["is_author_for"]
-        if not(self.data[str(user)]["word1"] == "" or self.data[str(user)]["word2"] == "" or self.data[str(user)]["phrase"] == ""):
+        if (
+            self.data[str(user)]["word1"] != ""
+            and self.data[str(user)]["word2"] != ""
+            and self.data[str(user)]["phrase"] != ""
+        ):
             raise EventError(
                 f"Die Einrichtung für den Teilnehmer {self.bot.get_user(user).mention} ist bereits abgeschlossen.")
 
@@ -217,15 +221,15 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
             await ctx.send(embed=e)
             try:
                 m = await self.bot.wait_for('message', check=lambda m: m.channel == ctx.channel and m.author == ctx.author, timeout=180)
-                if single_word:
-                    if len(m.content.split()) != 1:
-                        raise ValueError
+                if single_word and len(m.content.split()) != 1:
+                    raise ValueError
                 return m.content
             except asyncio.exceptions.TimeoutError:
                 await ctx.send(embed=simple_embed(ctx.author, "Timeout", "Bitte versuche es erneut.", color=discord.Color.red()))
             except ValueError:
                 await ctx.send(embed=simple_embed(ctx.author, "Kein Wort", "Du darfst nur ein Wort eingeben, bitte versuche es erneut.", color=discord.Color.red()))
             return ""
+
         w1 = await choose_word("Wort 1", True)
         if w1 == "":
             return
@@ -268,7 +272,7 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
         for p in self.config["participants"]:
             if (self.data[str(p)]["word1"] == "" or self.data[str(p)]["word2"] == "" or self.data[str(p)]["phrase"] == ""):
                 temp = False
-        
+
         if temp:
             self.config["words_complete"] = True
         save_data("event_config", self.config)
@@ -278,8 +282,8 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
     async def update_event_message(self):
         self.update_data()
         msg = await self.bot.get_channel(self.config["channel_id"]).fetch_message(self.config["event_message"])
-        e = msg.embeds[0]
         if self.config["words_complete"]:
+            e = msg.embeds[0]
             e.timestamp = datetime.datetime.now()
             e.description = "Das Spiel beginnt!"
 
@@ -302,7 +306,7 @@ Eine Person "gewinnt", wenn sie die letzte Person ist, die noch mindestens ein <
     async def on_command_error(self, ctx, error):
         # error = getattr(error, 'original', error)
         embed = discord.Embed(title=type(error).__name__)
-        if isinstance(error, CommandNotFound) or isinstance(error, MissingRequiredArgument):
+        if isinstance(error, (CommandNotFound, MissingRequiredArgument)):
             return
         embed.description = str(error)
         embed.color = discord.Color.red()
@@ -322,10 +326,9 @@ def save_data(filename, data):
         with open(config.path + f'/json/{filename}.json', 'w') as myfile:
             json.dump(data, myfile)
     except FileNotFoundError:
-        file = open(config.path + f'/json/{filename}.json', 'w')
-        file.write("{}")
-        json.dump(data, file)
-        file.close()
+        with open(config.path + f'/json/{filename}.json', 'w') as f:
+            f.write("{}")
+            json.dump(data, f)
 
 
 async def setup(bot):

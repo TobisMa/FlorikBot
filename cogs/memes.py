@@ -48,7 +48,7 @@ class Memes(commands.Cog):
                          icon_url=winner_message.author.avatar)
             e.color = winner_message.guild.get_member(
                 winner_message.author.id).colour
-            date = winner_message.created_at
+            date = winner_message.created_at  # TODO what does an unused variable here?
             e.description += "\n" + winner_message.content
             e.timestamp = datetime.datetime.now()
             e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
@@ -327,14 +327,14 @@ def get_vote_list():
         return json.loads(myfile.read())
 
 
-def change_voting_counter(message, amountToChange):
+def change_voting_counter(message, amount_to_change):
     vote_list = get_vote_list()
     if str(message.id) not in list(vote_list.keys()):
-        vote_list[str(message.id)] = (amountToChange, str(message.created_at))
+        vote_list[str(message.id)] = (amount_to_change, str(message.created_at))
         update_vote_list_file(vote_list)
         return
     vote_list[str(message.id)] = (vote_list[str(message.id)][0] +
-                                 amountToChange, vote_list[str(message.id)][1])
+                                 amount_to_change, vote_list[str(message.id)][1])
     update_vote_list_file(vote_list)
 
 

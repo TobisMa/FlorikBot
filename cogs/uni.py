@@ -22,7 +22,9 @@ class Uni(commands.Cog):
         async def predicate(ctx):
             possible_member = ctx.author
             guild = ctx.bot.get_guild(config.UNI_GUILD)
-            return possible_member in guild.members
+            if possible_member in guild.members:
+                return True
+            return "students" in get_data().keys() and ctx.author.id in get_data()["students"]
 
         return commands.check(predicate)
     
@@ -31,6 +33,8 @@ class Uni(commands.Cog):
         async def predicate(interaction: discord.Interaction) -> bool:
             guild = interaction.client.get_guild(config.UNI_GUILD)
             if interaction.user in guild.members:
+                return True
+            elif "students" in get_data().keys() and interaction.user.id in get_data()["students"]:
                 return True
             else:
                 e = simple_embed(interaction.user, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red())
@@ -193,11 +197,11 @@ class Uni(commands.Cog):
     async def addSubject(self, ctx, subject):
         """Fügt ein Fach der Vorlesungsstandsliste hinzu."""
 
-        if subject in self.data:
-            await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Das Fach ``{subject}`` ist existiert bereits", color=discord.Color.red()))
-            return
         if "subjects" not in self.data.keys():
             self.data["subjects"] = {}
+        if subject in self.data["subjects"]:
+            await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Das Fach ``{subject}`` ist existiert bereits", color=discord.Color.red()))
+            return
 
         self.data["subjects"][subject] = {
             "current": ("0.0", time()),
@@ -207,6 +211,23 @@ class Uni(commands.Cog):
         update_data(self.data)
         await self.update_message()
         await ctx.send(embed=simple_embed(ctx.author, f"Das Fach ``{subject}`` wurde erfolgreich hinzugefügt.", color=discord.Color.green()))
+
+    @is_bot_dev()
+    @commands.command(aliases=["addstudent"])
+    async def addStudent(self, ctx, student: discord.User):
+        """Gibt einem Nutzer Berechtigungen, Unicommands zu nutzen"""
+        if "students" not in self.data.keys():
+            self.data["students"] = []
+
+        if student in self.data["students"]:
+            await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Der Nutzer ``{student.name}`` hat bereits Berechtigungen", color=discord.Color.red()))
+            return
+
+        self.data["students"].append(student.id)
+        update_data(self.data)
+        await self.update_message()
+        await ctx.send(embed=simple_embed(ctx.author, f"Der Nutzer ``{student.name}`` wurde erfolgreich hinzugefügt.", color=discord.Color.green()))
+
 
     @is_in_uni_server()
     @commands.command(aliases=["vlsmsg"])

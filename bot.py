@@ -9,7 +9,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands.errors import (CheckFailure, CommandNotFound,
-                                         MissingRequiredArgument, NotOwner)
+                                         MissingRequiredArgument, NotOwner, UserNotFound)
 
 import config
 from helper_functions import simple_embed
@@ -41,6 +41,9 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, (NotOwner, CheckFailure)):
         await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red()))
+        return
+    if isinstance(error, (UserNotFound)):
+        await ctx.send(embed=simple_embed(ctx.author, "Der angegebene Nutzer wurde nicht gefunden.", color=discord.Color.red()))
         return
     embed = discord.Embed(title=repr(error)[:256])
     embed.color = discord.Color.red()

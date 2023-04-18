@@ -186,6 +186,8 @@ class Uni(commands.Cog):
         e = discord.Embed(title="Vorlesungsstand", color=discord.Color.blurple())
         description = ""
         for subject in self.data["subjects"]:
+            if self.data['subjects'][subject]['inactive']:
+                continue
             current = self.data['subjects'][subject]['current']
             timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
             description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
@@ -211,6 +213,25 @@ class Uni(commands.Cog):
         update_data(self.data)
         await self.update_message()
         await ctx.send(embed=simple_embed(ctx.author, f"Das Fach ``{subject}`` wurde erfolgreich hinzugefügt.", color=discord.Color.green()))
+
+
+    @is_bot_dev()
+    @commands.command(aliases=["vlsdeactivate"])
+    async def deactivateSubject(self, ctx, subject):
+        """Deaktiviert ein Fach."""
+
+        if "subjects" not in self.data.keys():
+            self.data["subjects"] = {}
+        if subject not in self.data["subjects"]:
+            await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Das Fach ``{subject}`` ist existiert nicht", color=discord.Color.red()))
+            return
+
+        self.data['subjects'][subject]['inactive'] = True;
+        update_data(self.data)
+        await self.update_message()
+        await ctx.send(embed=simple_embed(ctx.author, f"Das Fach ``{subject}`` wurde erfolgreich deaktiviert.", color=discord.Color.green()))
+
+
 
     @is_bot_dev()
     @commands.command(aliases=["addstudent"])

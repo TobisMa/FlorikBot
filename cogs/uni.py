@@ -63,7 +63,7 @@ class Uni(commands.Cog):
 
 
     async def update_subject_autocomplete(self,interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
-        choices = self.data["subjects"]
+        choices = [x for x in self.data["subjects"] if not x["inactive"]]
         return [
             app_commands.Choice(name=choice, value=choice) for choice in choices if current.lower() in choice.lower()
         ]

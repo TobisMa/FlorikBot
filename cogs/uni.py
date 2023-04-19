@@ -63,7 +63,7 @@ class Uni(commands.Cog):
 
 
     async def update_subject_autocomplete(self,interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
-        choices = [x for x in self.data["subjects"] if not x["inactive"]]
+        choices = [x for x in self.data["subjects"] if not self.data["subjects"][x]["inactive"]]
         return [
             app_commands.Choice(name=choice, value=choice) for choice in choices if current.lower() in choice.lower()
         ]
@@ -87,7 +87,10 @@ class Uni(commands.Cog):
             e = simple_embed(interaction.user, f"Das Fach `{subject}` existiert nicht", color=discord.Color.red())
             await interaction.response.send_message(embed=e, ephemeral=True)
             return
-
+        if self.data["subjects"][subject]["inactive"]:
+            e = simple_embed(interaction.user, f"Das Fach `{subject}` ist nicht aktiv", color=discord.Color.red())
+            await interaction.response.send_message(embed=e, ephemeral=True)
+            return
         if(timestamp):
             try:
                 timestamp = datetime.datetime.strptime(timestamp, '%d.%m.%Y').timestamp()

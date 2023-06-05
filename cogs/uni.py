@@ -1,5 +1,8 @@
+import hashlib
+import os
+import traceback
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import datetime
 from time import time
 from helper_functions import simple_embed
@@ -9,6 +12,11 @@ from bot import is_bot_dev, on_command_error
 from discord import app_commands
 from typing import List, Optional
 
+from PyPDF2 import PdfReader
+import re
+from datetime import datetime
+import locale
+discord_timestamp = "<t:{timestamp}:D> (<t:{timestamp}:R>)"
 
 class Uni(commands.Cog):
     """Commands zum debuggen"""
@@ -16,6 +24,10 @@ class Uni(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.data = get_data()
+        self.update_assignments.start()
+        
+    def cog_unload(self):
+        self.update_assignments.cancel()
 
     @staticmethod
     def is_in_uni_server():
@@ -264,9 +276,108 @@ class Uni(commands.Cog):
         await self.update_message()
 
 
+    async def send_to_channel(self, file, date, channel_id, ver=1):
+        filename = file.split("/")[-1].split("\\")[-1]
+        channel = self.bot.get_channel(channel_id)
+        f = discord.File(file)
+        if ver > 1:
+            await channel.send(f"``{filename}`` wurde aktualisiert. Version: ``{ver}``, Abgabedatum {date}", file=f)
+        await channel.send(f"Neues Übungsblatt: ``{filename}``, Abgabe am {date}", file=f)
+
+
+    @tasks.loop(hours=2)
+    async def update_assignments(self):
+        print("checking")
+        # load files (https://github.com/Garmelon/PFERD)
+        os.chdir(config.path)
+        os.popen("loadAssignments.sh").read()
+        change = False
+        with open(config.path + "/json/assignments.json", "r", encoding='utf-8') as f:
+            data = json.load(f)["assignments"]
+
+        for subject in data["subjects"].keys():
+            path = data["subjects"][subject]["path"] + os.sep
+            # iterate over pdf files in assignment folder
+            for _, _, files in os.walk(path):
+                for file in files:
+                    
+                    if not file.endswith(".pdf"):
+                        continue
+                    
+                    # check whether file is already in data
+                    if file not in data["subjects"][subject]["assignments"].keys():
+                        date = self.get_due_date(
+                            path + file, 
+                            data["subjects"][subject]["pattern"],
+                            data["subjects"][subject]["datetime_pattern"]
+                        )
+                        
+                        with open(path + file, "rb") as f:
+                            filehash = hashlib.sha1(f.read()).hexdigest()
+
+                        data["subjects"][subject]["assignments"][file] = {
+                            "version": 1, 
+                            "last_change": datetime.now().timestamp(), 
+                            "hash": filehash
+                        }
+                        await self.send_to_channel(path + file, date, data["subjects"][subject]["channel_id"])
+                        change = True
+
+                    else:
+                        # # check if file hash has changed
+                        with open(path + file, "rb") as f:
+                            filehash = hashlib.sha1(f.read()).hexdigest()
+
+                        if filehash != data["assignments"][file]["hash"]:
+                            date = self.get_due_date(
+                                path + file, 
+                                data["subjects"][subject]["pattern"],
+                                data["subjects"][subject]["datetime_pattern"]
+                            )
+                            data["subjects"][subject]["assignments"][file]["version"] += 1
+                            data["subjects"][subject]["assignments"][file]["last_change"] = datetime.now().timestamp()
+                            data["subjects"][subject]["assignments"][file]["hash"] = filehash
+
+                            await self.send_to_channel(
+                                path + file,
+                                date,
+                                data["subjects"][subject]["assignments"][file]["version"], 
+                                data["subjects"][subject]["channel_id"]
+                            )
+                            change = True
+
+        # update data file
+        if change:
+            with open(config.path + "/json/assignments.json", "w", encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+
+    @update_assignments.before_loop
+    async def before_printer(self):
+        await self.bot.wait_until_ready()
+        
+        
+    def get_due_date(self, path, time_pattern, datetime_pattern):
+        locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+        pdf_reader = PdfReader(path)
+        
+        page_1 = pdf_reader.pages[0]
+        lines = page_1.extract_text().splitlines()
+        for line in lines:
+            if re.match(time_pattern, line):
+                date = re.match(time_pattern, line).group(1)
+                time = re.match(time_pattern, line).group(2)
+                actual_date = datetime.strptime(date + " " + time, datetime_pattern)
+                # set year if none is specified
+                if actual_date.year < datetime.now().year:
+                    actual_date = actual_date.replace(year=datetime.now().year)
+                # fix year if date is in the next year (e.g. 1.1.20xx)
+                if actual_date.timestamp() < datetime.now().timestamp():
+                    actual_date = actual_date.replace(year=datetime.now().year + 1)
+                return discord_timestamp.format(timestamp=int(actual_date.timestamp()))
+        
 def update_data(data):
     with open(config.path + '/json/uniVL.json', 'w') as myfile:
-        json.dump(data, myfile)
+        json.dump(data, myfile, indent=4)
 
 
 def get_data():
@@ -278,6 +389,29 @@ def get_data():
 
 
 async def setup(bot):
+    if not os.path.exists(config.path + "/json/assignments.json"):
+        with open(config.path + "/json/assignments.json", "w") as f:
+            assignment_base = {
+                "assignments":{
+                    "subjects" : {
+                        # "dummy" : {
+                        #     "path" : "",
+                        #     "pattern": "",
+                        #     "datetime_pattern": "",
+                        #     "channel_id": 0
+                        #     "assignments" : {
+                        #         "B1": {
+                        #             "hash": "",
+                        #             "version": 0,
+                        #             "last_change": 0
+                        #         }
+                        #     }
+                        # }
+                    }
+                }
+            }
+            f.write(json.dumps(assignment_base, indent=4))
+            
     if(config.GUILDS):
         await bot.add_cog(Uni(bot), guilds=config.GUILDS)
     else:

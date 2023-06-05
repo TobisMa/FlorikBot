@@ -282,6 +282,7 @@ class Uni(commands.Cog):
         f = discord.File(file)
         if ver > 1:
             await channel.send(f"``{filename}`` wurde aktualisiert. Version: ``{ver}``, Abgabedatum {date}", file=f)
+            return
         await channel.send(f"Neues Übungsblatt: ``{filename}``, Abgabe am {date}", file=f)
 
 
@@ -327,7 +328,7 @@ class Uni(commands.Cog):
                         with open(path + file, "rb") as f:
                             filehash = hashlib.sha1(f.read()).hexdigest()
 
-                        if filehash != data["assignments"][file]["hash"]:
+                        if filehash != data["subjects"][subject]["assignments"][file]["hash"]:
                             date = self.get_due_date(
                                 path + file, 
                                 data["subjects"][subject]["pattern"],
@@ -340,8 +341,8 @@ class Uni(commands.Cog):
                             await self.send_to_channel(
                                 path + file,
                                 date,
-                                data["subjects"][subject]["assignments"][file]["version"], 
-                                data["subjects"][subject]["channel_id"]
+                                data["subjects"][subject]["channel_id"],
+                                data["subjects"][subject]["assignments"][file]["version"] 
                             )
                             change = True
 

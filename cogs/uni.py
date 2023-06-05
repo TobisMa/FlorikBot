@@ -287,7 +287,6 @@ class Uni(commands.Cog):
 
     @tasks.loop(hours=2)
     async def update_assignments(self):
-        print("checking")
         # load files (https://github.com/Garmelon/PFERD)
         os.chdir(config.path)
         os.popen("sh ../assignment-data/loadAssignments.sh").read()

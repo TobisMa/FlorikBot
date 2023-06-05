@@ -287,10 +287,9 @@ class Uni(commands.Cog):
 
     @tasks.loop(hours=2)
     async def update_assignments(self):
-        print("checking")
         # load files (https://github.com/Garmelon/PFERD)
         os.chdir(config.path)
-        os.popen("loadAssignments.sh").read()
+        os.popen("sh ../assignment-data/loadAssignments.sh").read()
         change = False
         with open(config.path + "/json/assignments.json", "r", encoding='utf-8') as f:
             data = json.load(f)["assignments"]

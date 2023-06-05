@@ -271,7 +271,7 @@ class Utility(commands.Cog):
                 quote = self.quotes[index - 1]
                 random_quote = False
 
-        e = simple_embed(ctx.author, ("Zufälliges" if random_quote else "") + "Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
+        e = simple_embed(ctx.author, ("Zufälliges " if random_quote else "") + "Zitat Nr. " + str(self.quotes.index(quote) + 1), quote)
         await ctx.channel.send(embed=e)
         
     def get_quotes(self):

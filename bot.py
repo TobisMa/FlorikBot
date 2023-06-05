@@ -6,9 +6,10 @@ import datetime
 import traceback
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands.errors import (CheckFailure, CommandNotFound,
-                                         MissingRequiredArgument, NotOwner)
+                                         MissingRequiredArgument, NotOwner, UserNotFound)
 
 import config
 from helper_functions import simple_embed
@@ -16,7 +17,8 @@ from helper_functions import simple_embed
 intents = discord.Intents.all()
 intents.messages = True
 intents.presences = True
-bot = commands.Bot(command_prefix=config.PREFIX, intents=intents)
+bot = commands.Bot(command_prefix=config.PREFIX, intents=intents, application_id=config.APP_ID)
+# tree = app_commands.CommandTree(bot)
 bot.owner_ids = config.OWNER_IDS
 
 @bot.event
@@ -27,7 +29,6 @@ async def on_error(event, *args, **kwargs):
     embed.set_footer(text=kwargs)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=embed)
-    # Florian war hier
     
 @bot.event
 async def on_command_error(ctx, error):
@@ -40,6 +41,9 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, (NotOwner, CheckFailure)):
         await ctx.send(embed=simple_embed(ctx.author, "Du hast keine Berechtigung diesen Command auszuführen.", color=discord.Color.red()))
+        return
+    if isinstance(error, (UserNotFound)):
+        await ctx.send(embed=simple_embed(ctx.author, "Der angegebene Nutzer wurde nicht gefunden.", color=discord.Color.red()))
         return
     embed = discord.Embed(title=repr(error)[:256])
     embed.color = discord.Color.red()
@@ -63,7 +67,11 @@ async def on_ready():
     e.set_footer(text=bot.user.name, icon_url=bot.user.avatar)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=e)
-
+    if(config.DEBUG):
+        await bot.tree.sync(guild=config.DEBUG_GUILD)
+    else:
+        await bot.tree.sync()
+        
 def is_bot_dev():
     async def predicate(ctx):
         return ctx.author.id in config.OWNER_IDS or 761237826758246412 in [r.id for r in bot.get_guild(config.SERVER_ID).get_member(ctx.author.id).roles]
@@ -224,6 +232,11 @@ async def main():
         await bot.load_extension("cogs.music")
 
         bot.help_command = HelpCommand()
+
+        # await bot.tree.sync()
+        # print(bot.tree)
+        # await bot.tree.copy_global_to(guild=discord.Object(id=572410770520932352))
+        
         await bot.start(config.TOKEN, reconnect=True)
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from discord.ext import commands
 
 import config
 from bot import is_bot_dev, on_command_error
-from helper_functions import get_emoji, is_url_image, simple_embed
+from helper_functions import get_emoji, is_url_image
 
 
 def is_private_server():
@@ -24,28 +24,6 @@ class Memes(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
-    # @commands.command()
-    # async def entries(self, ctx):
-    #     """Zeigt alle Memes, deren Scores für die Bestenliste gespeichert werden"""
-    #     deleteOldMessages()
-    #     voteList = getVoteList()
-    #     e = discord.Embed()
-    #     e.color = discord.Color.purple()
-    #     e.timestamp = datetime.datetime.now()
-    #     e.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar)
-    #     e.set_author(name=self.bot.user, icon_url=self.bot.user.avatar)
-    #     if not len(voteList) > 0:
-    #         e.title = "Gerade eben sind keine Memes vorhanden."
-    #         await ctx.send(embed=e)
-    #         return
-    #     e.title = "Entries"
-    #     e.description = "All current entry messages in the votelist.\n\n```[ MessageID:\n Upvotes \u2606, created_at ]```"
-    #     for k in list(voteList.keys()):
-    #         e.add_field(
-    #             name=f"{str(k)}:", value=f"```{str(voteList[k][0])} \u2606, {str(voteList[k][1])}```", inline=False)
-
-    #     await ctx.send(embed=e)
 
     @is_private_server()
     @commands.command()

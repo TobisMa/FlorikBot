@@ -1,9 +1,7 @@
 import hashlib
 import os
-import traceback
 import discord
 from discord.ext import commands, tasks
-import datetime
 from time import time
 from helper_functions import simple_embed
 import json
@@ -68,7 +66,7 @@ class Uni(commands.Cog):
         description = ""
         for subject in self.data["subjects"]:
             current = self.data['subjects'][subject]['current']
-            timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
+            timestring = datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
             description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
         e.description = description
         await interaction.response.send_message(embed=e, ephemeral=True)
@@ -105,7 +103,7 @@ class Uni(commands.Cog):
             return
         if(timestamp):
             try:
-                timestamp = datetime.datetime.strptime(timestamp, '%d.%m.%Y').timestamp()
+                timestamp = datetime.strptime(timestamp, '%d.%m.%Y').timestamp()
             except ValueError as ex:
                 e = simple_embed(interaction.user, ex.args[0], color=discord.Color.red())
                 await interaction.response.send_message(embed=e, ephemeral=True)
@@ -156,7 +154,7 @@ class Uni(commands.Cog):
             (subject, start, end) = args
         elif len(args) == 4:
             (subject, start, end, timestr) = args
-            timestamp = datetime.datetime.strptime(timestr, '%d.%m.%Y').timestamp()
+            timestamp = datetime.strptime(timestr, '%d.%m.%Y').timestamp()
             
         if "subjects" not in self.data.keys() or subject not in self.data["subjects"]:
             await ctx.send(embed=simple_embed(ctx.author, "Ein Fehler ist aufgetreten", f"Das Fach ``{subject}`` ist nicht vorhanden", color=discord.Color.red()))
@@ -204,7 +202,7 @@ class Uni(commands.Cog):
             if self.data['subjects'][subject]['inactive']:
                 continue
             current = self.data['subjects'][subject]['current']
-            timestring = datetime.datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
+            timestring = datetime.fromtimestamp(current[1]).strftime('%d.%m.%Y') #  %H:%MUhr
             description += f"**{subject}**\n{current[0]}  -  (Stand {timestring})\n\n"
         e.description = description
         await msg.edit(embed=e)

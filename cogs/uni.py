@@ -359,20 +359,20 @@ class Uni(commands.Cog):
         locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
         pdf_reader = PdfReader(path)
         
-        page_1 = pdf_reader.pages[0]
-        lines = page_1.extract_text().splitlines()
-        for line in lines:
-            if re.match(time_pattern, line):
-                date = re.match(time_pattern, line).group(1)
-                time = re.match(time_pattern, line).group(2)
-                actual_date = datetime.strptime(date + " " + time, datetime_pattern)
-                # set year if none is specified
-                if actual_date.year < datetime.now().year:
-                    actual_date = actual_date.replace(year=datetime.now().year)
-                # fix year if date is in the next year (e.g. 1.1.20xx)
-                if actual_date.timestamp() < datetime.now().timestamp():
-                    actual_date = actual_date.replace(year=datetime.now().year + 1)
-                return discord_timestamp.format(timestamp=int(actual_date.timestamp()))
+        for page in pdf_reader.pages:
+            lines = page.extract_text().splitlines()
+            for line in lines:
+                if re.match(time_pattern, line):
+                    date = re.match(time_pattern, line).group(1)
+                    time = re.match(time_pattern, line).group(2)
+                    actual_date = datetime.strptime(date + " " + time, datetime_pattern)
+                    # set year if none is specified
+                    if actual_date.year < datetime.now().year:
+                        actual_date = actual_date.replace(year=datetime.now().year)
+                    # fix year if date is in the next year (e.g. 1.1.20xx)
+                    if actual_date.timestamp() < datetime.now().timestamp():
+                        actual_date = actual_date.replace(year=datetime.now().year + 1)
+                    return discord_timestamp.format(timestamp=int(actual_date.timestamp()))
         
 def update_data(data):
     with open(config.path + '/json/uniVL.json', 'w') as myfile:

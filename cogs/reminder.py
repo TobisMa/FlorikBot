@@ -93,7 +93,7 @@ class Erinnerungen(commands.Cog):
         r = Reminder(interaction.user.id, time, nachricht, [user], [], is_private=is_private, channel=interaction.channel_id)
         other = ""
         if user != interaction.user.id:
-            other = f"an {user}"
+            other = f"an {user.name}"
         e = simple_embed(interaction.user, f"Glückwunsch, deine Erinnerung für {time} {other} wurde erfolgreich gespeichert.", nachricht)
         add_new_reminder(r) 
         await interaction.response.send_message(embed=e, ephemeral=is_private)

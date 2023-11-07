@@ -295,6 +295,10 @@ class Uni(commands.Cog):
 
         for subject in data["subjects"].keys():
             path = data["subjects"][subject]["path"] + os.sep
+
+            locale = "de_DE.UTF-8"
+            if data["subjects"][subject]["locale"]:
+                locale = data["subjects"][subject]["locale"]
             # iterate over pdf files in assignment folder
             for _, _, files in os.walk(path):
                 for file in files:
@@ -307,7 +311,8 @@ class Uni(commands.Cog):
                         date = self.get_due_date(
                             path + file, 
                             data["subjects"][subject]["pattern"],
-                            data["subjects"][subject]["datetime_pattern"]
+                            data["subjects"][subject]["datetime_pattern"],
+                            locale
                         )
                         
                         with open(path + file, "rb") as f:
@@ -330,7 +335,8 @@ class Uni(commands.Cog):
                             date = self.get_due_date(
                                 path + file, 
                                 data["subjects"][subject]["pattern"],
-                                data["subjects"][subject]["datetime_pattern"]
+                                data["subjects"][subject]["datetime_pattern"],
+                                locale
                             )
                             data["subjects"][subject]["assignments"][file]["version"] += 1
                             data["subjects"][subject]["assignments"][file]["last_change"] = datetime.now().timestamp()
@@ -355,10 +361,9 @@ class Uni(commands.Cog):
         await self.bot.wait_until_ready()
         
         
-    def get_due_date(self, path, time_pattern, datetime_pattern):
-        locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+    def get_due_date(self, path, time_pattern, datetime_pattern, locale_="de_DE.UTF-8"):
+        locale.setlocale(locale.LC_TIME, locale_)
         pdf_reader = PdfReader(path)
-        
         for page in pdf_reader.pages:
             lines = page.extract_text().splitlines()
             for line in lines:

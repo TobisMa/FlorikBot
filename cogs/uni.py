@@ -295,9 +295,9 @@ class Uni(commands.Cog):
 
         for subject in data["subjects"].keys():
             path = data["subjects"][subject]["path"] + os.sep
-
+            
             locale = "de_DE.UTF-8"
-            if data["subjects"][subject]["locale"]:
+            if "locale" in data["subjects"][subject]:
                 locale = data["subjects"][subject]["locale"]
             # iterate over pdf files in assignment folder
             for _, _, files in os.walk(path):

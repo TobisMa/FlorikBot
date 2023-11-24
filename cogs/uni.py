@@ -279,9 +279,11 @@ class Uni(commands.Cog):
         channel = self.bot.get_channel(channel_id)
         f = discord.File(file)
         if ver > 1:
-            await channel.send(f"``{filename}`` wurde aktualisiert. Version: ``{ver}``, Abgabedatum {date}", file=f)
+            date_str = f", Abgabedatum {date}" if date else ""
+            await channel.send(f"``{filename}`` wurde aktualisiert. Version: ``{ver}``{date_str}", file=f)
             return
-        await channel.send(f"Neues Übungsblatt: ``{filename}``, Abgabe am {date}", file=f)
+        date_str = f", Abgabe am {date}" if date else ""
+        await channel.send(f"Neues Übungsblatt: ``{filename}``{date_str}", file=f)
 
 
     @tasks.loop(hours=2)
@@ -362,22 +364,25 @@ class Uni(commands.Cog):
         
         
     def get_due_date(self, path, time_pattern, datetime_pattern, locale_="de_DE.UTF-8"):
-        locale.setlocale(locale.LC_TIME, locale_)
-        pdf_reader = PdfReader(path)
-        for page in pdf_reader.pages:
-            lines = page.extract_text().splitlines()
-            for line in lines:
-                if re.match(time_pattern, line):
-                    date = re.match(time_pattern, line).group(1)
-                    time = re.match(time_pattern, line).group(2)
-                    actual_date = datetime.strptime(date + " " + time, datetime_pattern)
-                    # set year if none is specified
-                    if actual_date.year < datetime.now().year:
-                        actual_date = actual_date.replace(year=datetime.now().year)
-                    # fix year if date is in the next year (e.g. 1.1.20xx)
-                    if actual_date.timestamp() < datetime.now().timestamp():
-                        actual_date = actual_date.replace(year=datetime.now().year + 1)
-                    return discord_timestamp.format(timestamp=int(actual_date.timestamp()))
+        try:
+            locale.setlocale(locale.LC_TIME, locale_)
+            pdf_reader = PdfReader(path)
+            for page in pdf_reader.pages:
+                lines = page.extract_text().splitlines()
+                for line in lines:
+                    if re.match(time_pattern, line):
+                        date = re.match(time_pattern, line).group(1)
+                        time = re.match(time_pattern, line).group(2)
+                        actual_date = datetime.strptime(date + " " + time, datetime_pattern)
+                        # set year if none is specified
+                        if actual_date.year < datetime.now().year:
+                            actual_date = actual_date.replace(year=datetime.now().year)
+                        # fix year if date is in the next year (e.g. 1.1.20xx)
+                        if actual_date.timestamp() < datetime.now().timestamp():
+                            actual_date = actual_date.replace(year=datetime.now().year + 1)
+                        return discord_timestamp.format(timestamp=int(actual_date.timestamp()))
+        except ValueError as e:
+            return None
         
 def update_data(data):
     with open(config.path + '/json/uniVL.json', 'w') as myfile:

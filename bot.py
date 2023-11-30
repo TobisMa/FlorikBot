@@ -227,7 +227,7 @@ async def main():
 
         await bot.load_extension("cogs.uni")
 
-        await bot.load_extension("cogs.news")
+        # await bot.load_extension("cogs.news")
         await bot.load_extension("cogs.debug")
         await bot.load_extension("cogs.music")
 

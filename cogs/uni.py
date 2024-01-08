@@ -290,76 +290,79 @@ class Uni(commands.Cog):
     async def update_assignments(self):
         # load files (https://github.com/Garmelon/PFERD)
         os.chdir(config.path)
-        os.popen("sh ../assignment-data/loadAssignments.sh").read()
+        # os.popen("sh ../assignment-data/loadAssignments.sh").read()
         change = False
         with open(config.path + "/json/assignments.json", "r", encoding='utf-8') as f:
             data = json.load(f)["assignments"]
 
-        for subject in data["subjects"].keys():
-            path = data["subjects"][subject]["path"] + os.sep
-            
-            locale = "de_DE.UTF-8"
-            if "locale" in data["subjects"][subject]:
-                locale = data["subjects"][subject]["locale"]
-            # iterate over pdf files in assignment folder
-            for _, _, files in os.walk(path):
-                for file in files:
-                    
-                    if not file.endswith(".pdf"):
-                        continue
-                    
-                    # check whether file is already in data
-                    if file not in data["subjects"][subject]["assignments"].keys():
-                        date = self.get_due_date(
-                            path + file, 
-                            data["subjects"][subject]["pattern"],
-                            data["subjects"][subject]["datetime_pattern"],
-                            locale
-                        )
+        try: 
+            for subject in data["subjects"].keys():
+                path = data["subjects"][subject]["path"] + os.sep
+                
+                locale = "de_DE.UTF-8"
+                if "locale" in data["subjects"][subject]:
+                    locale = data["subjects"][subject]["locale"]
+                # iterate over pdf files in assignment folder
+                for _, _, files in os.walk(path):
+                    for file in files:
                         
-                        with open(path + file, "rb") as f:
-                            filehash = hashlib.sha1(f.read()).hexdigest()
-
-                        data["subjects"][subject]["assignments"][file] = {
-                            "version": 1, 
-                            "last_change": datetime.now().timestamp(), 
-                            "hash": filehash
-                        }
-                        await self.send_to_channel(path + file, date, data["subjects"][subject]["channel_id"])
-                        change = True
-
-                    else:
-                        # # check if file hash has changed
-                        with open(path + file, "rb") as f:
-                            filehash = hashlib.sha1(f.read()).hexdigest()
-
-                        if filehash != data["subjects"][subject]["assignments"][file]["hash"]:
+                        if not file.endswith(".pdf"):
+                            continue
+                        
+                        # check whether file is already in data
+                        if file not in data["subjects"][subject]["assignments"].keys():
                             date = self.get_due_date(
                                 path + file, 
                                 data["subjects"][subject]["pattern"],
                                 data["subjects"][subject]["datetime_pattern"],
                                 locale
                             )
-                            data["subjects"][subject]["assignments"][file]["version"] += 1
-                            data["subjects"][subject]["assignments"][file]["last_change"] = datetime.now().timestamp()
-                            data["subjects"][subject]["assignments"][file]["hash"] = filehash
+                            
+                            with open(path + file, "rb") as f:
+                                filehash = hashlib.sha1(f.read()).hexdigest()
 
-                            await self.send_to_channel(
-                                path + file,
-                                date,
-                                data["subjects"][subject]["channel_id"],
-                                data["subjects"][subject]["assignments"][file]["version"] 
-                            )
+                            data["subjects"][subject]["assignments"][file] = {
+                                "version": 1, 
+                                "last_change": datetime.now().timestamp(), 
+                                "hash": filehash
+                            }
+                            await self.send_to_channel(path + file, date, data["subjects"][subject]["channel_id"])
                             change = True
 
-        # update data file
-        if change:
-            with open(config.path + "/json/assignments.json", "w", encoding='utf-8') as f:
-                new_data = {"assignments": data}
-                json.dump(new_data, f, indent=4)
+                        else:
+                            # # check if file hash has changed
+                            with open(path + file, "rb") as f:
+                                filehash = hashlib.sha1(f.read()).hexdigest()
 
+                            if filehash != data["subjects"][subject]["assignments"][file]["hash"]:
+                                date = self.get_due_date(
+                                    path + file, 
+                                    data["subjects"][subject]["pattern"],
+                                    data["subjects"][subject]["datetime_pattern"],
+                                    locale
+                                )
+                                data["subjects"][subject]["assignments"][file]["version"] += 1
+                                data["subjects"][subject]["assignments"][file]["last_change"] = datetime.now().timestamp()
+                                data["subjects"][subject]["assignments"][file]["hash"] = filehash
+
+                                await self.send_to_channel(
+                                    path + file,
+                                    date,
+                                    data["subjects"][subject]["channel_id"],
+                                    data["subjects"][subject]["assignments"][file]["version"] 
+                                )
+                                change = True
+
+            # update data file
+            if change:
+                with open(config.path + "/json/assignments.json", "w", encoding='utf-8') as f:
+                    new_data = {"assignments": data}
+                    json.dump(new_data, f, indent=4)
+        except Exception as e:
+            await on_command_error(self.bot, e)
+            
     @update_assignments.before_loop
-    async def before_printer(self):
+    async def before_assignment_loop(self):
         await self.bot.wait_until_ready()
         
         

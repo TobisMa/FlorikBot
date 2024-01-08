@@ -29,11 +29,14 @@ async def on_error(event, *args, **kwargs):
     embed.set_footer(text=kwargs)
     channel = bot.get_channel(config.LOG_CHANNEL_ID)
     await channel.send(embed=embed)
-    
+
 @bot.event
 async def on_command_error(ctx, error):
     # if this is not manually called with a textchannel as ctx and the ctx has no own error handler 
     if not isinstance(ctx, discord.TextChannel) and hasattr(ctx.command, 'on_error'):
+        print("on_command_error:\n")
+        print(traceback.format_exception(type(error), value=error, tb=error.__traceback__))
+        print("\n\n")
         return
 
     error: Exception = getattr(error, 'original', error)

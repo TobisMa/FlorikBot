@@ -14,7 +14,7 @@ from PIL.ImageOps import invert
 # from pnglatex import pnglatex
 from pnglatex.pnglatex import _get_fname, Path, _BINARIES, devnull, _cleanup, _run, _get_bin
 from io import BytesIO
-import config
+import public_config
 from helper_functions import *
 
 # ev command
@@ -258,7 +258,7 @@ class Utility(commands.Cog):
     async def zitat(self, ctx, *args):
         """Gibt ein zufälliges Zitat aus der Zitatesammlung aus."""
         if args and not args[0].isnumeric():
-            await ctx.send(embed=simple_embed(ctx.author, f"Um ein Zitat hinzuzufügen, nutze bitte {config.PREFIX}zitate", color=discord.Color.red()))
+            await ctx.send(embed=simple_embed(ctx.author, f"Um ein Zitat hinzuzufügen, nutze bitte {public_config.PREFIX}zitate", color=discord.Color.red()))
             return
         if len(self.quotes) == 0:
             await ctx.channel.send(embed=simple_embed(ctx.author,"Momentan sind noch keine Zitate vorhanden.", color=discord.Color.red()))
@@ -276,7 +276,7 @@ class Utility(commands.Cog):
         
     def get_quotes(self):
         try:
-            with open(config.path + '/json/quotes.json', 'r') as myfile:
+            with open(public_config.path + '/json/quotes.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return []
@@ -284,12 +284,12 @@ class Utility(commands.Cog):
     def add_quote(self, quote):
         self.quotes.append(quote)
         try:
-            with open(config.path + '/json/quotes.json', 'w') as myfile:
+            with open(public_config.path + '/json/quotes.json', 'w') as myfile:
                 json.dump(self.quotes, myfile)
         except FileNotFoundError:
-            with open(config.path + '/json/quotes.json', 'w') as file:
+            with open(public_config.path + '/json/quotes.json', 'w') as file:
                 file.write("[]")
-            with open(config.path + '/json/quotes.json', 'w') as myfile:
+            with open(public_config.path + '/json/quotes.json', 'w') as myfile:
                 json.dump(self.quotes, myfile)
         
         
@@ -298,18 +298,18 @@ class Utility(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         afk_channel = member.guild.afk_channel
         if after.channel and before.channel:  # if the member didn't just join or quit, but moved channels
-            if after.channel == afk_channel and before.channel.id in config.AWAKE_CHANNEL_IDS:  # the "Stay awake" feature
+            if after.channel == afk_channel and before.channel.id in public_config.AWAKE_CHANNEL_IDS:  # the "Stay awake" feature
                 await member.move_to(before.channel)
 
         # the "banish" feature
-        if after.channel and member.guild.get_role(config.BANISHED_ROLE_ID) in member.roles and after.channel.id != config.BANISHED_VC_ID and member.id not in self.bot.owner_ids:
-            await member.move_to(member.guild.get_channel(config.BANISHED_VC_ID))
+        if after.channel and member.guild.get_role(public_config.BANISHED_ROLE_ID) in member.roles and after.channel.id != public_config.BANISHED_VC_ID and member.id not in self.bot.owner_ids:
+            await member.move_to(member.guild.get_channel(public_config.BANISHED_VC_ID))
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         # move to hell if banished role was added
-        hell = before.guild.get_channel(config.BANISHED_VC_ID)
-        r = before.guild.get_role(config.BANISHED_ROLE_ID)
+        hell = before.guild.get_channel(public_config.BANISHED_VC_ID)
+        r = before.guild.get_role(public_config.BANISHED_ROLE_ID)
         if r in after.roles and r not in before.roles and before.id not in self.bot.owner_ids and after.voice != None and after.voice.channel != hell:
             await after.move_to(hell)
 

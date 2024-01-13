@@ -8,7 +8,7 @@ import aiohttp
 from discord.ext.commands.errors import MemberNotFound
 import requests
 
-import config
+import public_config
 from helper_functions import *
 from bot import is_bot_dev
 
@@ -119,7 +119,7 @@ class Wholesome(commands.Cog):
 
     def readJson(self, name : str):
         try:
-            with open(config.path + f'/json/{name}.json', 'r') as myfile:
+            with open(public_config.path + f'/json/{name}.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return []
@@ -127,11 +127,11 @@ class Wholesome(commands.Cog):
     def addInJson(self, name : str, add):
         try:
             js = self.readJson(name)
-            with open(config.path + f'/json/{name}.json', 'w') as myfile:
+            with open(public_config.path + f'/json/{name}.json', 'w') as myfile:
                 js.append(add)
                 json.dump(js, myfile)
         except FileNotFoundError:
-            with open(config.path + f'/json/{name}.json', 'w') as file:
+            with open(public_config.path + f'/json/{name}.json', 'w') as file:
                 file.write("[]")
 
 

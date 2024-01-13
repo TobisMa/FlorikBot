@@ -5,7 +5,7 @@ from discord.ext import commands, tasks
 from time import time
 from helper_functions import simple_embed
 import json
-import config
+import public_config
 from bot import is_bot_dev, on_command_error
 from discord import app_commands
 from typing import List, Optional
@@ -31,7 +31,7 @@ class Uni(commands.Cog):
     def is_in_uni_server():
         async def predicate(ctx):
             possible_member = ctx.author
-            guild = ctx.bot.get_guild(config.UNI_GUILD)
+            guild = ctx.bot.get_guild(public_config.UNI_GUILD)
             if possible_member in guild.members:
                 return True
             return "students" in get_data().keys() and ctx.author.id in get_data()["students"]
@@ -41,7 +41,7 @@ class Uni(commands.Cog):
     @staticmethod
     def is_in_uni_server_interaction_check():
         async def predicate(interaction: discord.Interaction) -> bool:
-            guild = interaction.client.get_guild(config.UNI_GUILD)
+            guild = interaction.client.get_guild(public_config.UNI_GUILD)
             if interaction.user in guild.members:
                 return True
             elif "students" in get_data().keys() and interaction.user.id in get_data()["students"]:
@@ -289,10 +289,10 @@ class Uni(commands.Cog):
     @tasks.loop(hours=2)
     async def update_assignments(self):
         # load files (https://github.com/Garmelon/PFERD)
-        os.chdir(config.path)
+        os.chdir(public_config.path)
         os.popen("sh ../assignment-data/loadAssignments.sh").read()
         change = False
-        with open(config.path + "/json/assignments.json", "r", encoding='utf-8') as f:
+        with open(public_config.path + "/json/assignments.json", "r", encoding='utf-8') as f:
             data = json.load(f)["assignments"]
 
         for subject in data["subjects"].keys():
@@ -355,7 +355,7 @@ class Uni(commands.Cog):
 
         # update data file
         if change:
-            with open(config.path + "/json/assignments.json", "w", encoding='utf-8') as f:
+            with open(public_config.path + "/json/assignments.json", "w", encoding='utf-8') as f:
                 new_data = {"assignments": data}
                 json.dump(new_data, f, indent=4)
             
@@ -386,21 +386,21 @@ class Uni(commands.Cog):
             return None
         
 def update_data(data):
-    with open(config.path + '/json/uniVL.json', 'w') as myfile:
+    with open(public_config.path + '/json/uniVL.json', 'w') as myfile:
         json.dump(data, myfile, indent=4)
 
 
 def get_data():
     try:
-        with open(config.path + '/json/uniVL.json', 'r') as myfile:
+        with open(public_config.path + '/json/uniVL.json', 'r') as myfile:
             return json.loads(myfile.read())
     except FileNotFoundError:
         return {}
 
 
 async def setup(bot):
-    if not os.path.exists(config.path + "/json/assignments.json"):
-        with open(config.path + "/json/assignments.json", "w") as f:
+    if not os.path.exists(public_config.path + "/json/assignments.json"):
+        with open(public_config.path + "/json/assignments.json", "w") as f:
             assignment_base = {
                 "assignments":{
                     "subjects" : {
@@ -422,7 +422,7 @@ async def setup(bot):
             }
             f.write(json.dumps(assignment_base, indent=4))
             
-    if(config.GUILDS):
-        await bot.add_cog(Uni(bot), guilds=config.GUILDS)
+    if(public_config.GUILDS):
+        await bot.add_cog(Uni(bot), guilds=public_config.GUILDS)
     else:
         await bot.add_cog(Uni(bot))

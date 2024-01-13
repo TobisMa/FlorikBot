@@ -3,7 +3,7 @@ from discord.ext import commands
 import json
 import random
 
-import config
+import public_config
 from helper_functions import simple_embed
 
 class UserMessages(commands.Cog):
@@ -67,7 +67,7 @@ class UserMessages(commands.Cog):
     
     def read_json(self):
         try:
-            with open(config.path + '/json/userReactions.json', 'r') as myfile:
+            with open(public_config.path + '/json/userReactions.json', 'r') as myfile:
                 return json.loads(myfile.read())
         except FileNotFoundError:
             return {}
@@ -75,7 +75,7 @@ class UserMessages(commands.Cog):
     def add_in_json(self, user, on_msg, bot_reaction_msg):
         js = self.data
         try:
-            with open(config.path + '/json/userReactions.json', 'w') as myfile:
+            with open(public_config.path + '/json/userReactions.json', 'w') as myfile:
                 if str(user.id) not in js.keys():
                     js[str(user.id)] = {}
                 if on_msg not in js[str(user.id)].keys():
@@ -83,7 +83,7 @@ class UserMessages(commands.Cog):
                 js[str(user.id)][on_msg].append(bot_reaction_msg)
                 json.dump(js, myfile)
         except FileNotFoundError:
-            with open(config.path + '/json/userReactions.json', 'w') as file:
+            with open(public_config.path + '/json/userReactions.json', 'w') as file:
                 file.write("{}")
             self.add_in_json(user, on_msg, bot_reaction_msg)
         self.data = js
@@ -91,11 +91,11 @@ class UserMessages(commands.Cog):
     def remove_from_json(self, user, key):
         js = self.data
         try:
-            with open(config.path + '/json/userReactions.json', 'w') as myfile:
+            with open(public_config.path + '/json/userReactions.json', 'w') as myfile:
                 del js[str(user.id)][key]
                 json.dump(js, myfile)
         except FileNotFoundError:
-            with open(config.path + '/json/userReactions.json', 'w') as file:
+            with open(public_config.path + '/json/userReactions.json', 'w') as file:
                 file.write("{}")
         self.data = js
 

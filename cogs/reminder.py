@@ -7,10 +7,8 @@ import traceback
 import contextlib
 from typing import List, Optional
 from discord import app_commands
-from discord.errors import Forbidden
 from discord.ext import commands, tasks
 
-import public_config as config
 
 
 class Reminder():

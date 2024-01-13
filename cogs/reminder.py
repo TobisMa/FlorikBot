@@ -9,6 +9,7 @@ from typing import List, Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 
+import public_config as config
 
 
 class Reminder():

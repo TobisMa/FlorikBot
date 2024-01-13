@@ -73,6 +73,7 @@ class DeleteReminder(discord.ui.View):
         for value in self.select.values:
             remove_new_reminder(interaction.user.id, self.reminders[int(value)])        
         await interaction.response.send_message(embed=e, ephemeral=True)
+        self.stop()
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
         await interaction.response.send_message('Oops! Something went wrong. ' + str(error), ephemeral=True)
@@ -85,11 +86,11 @@ class Reminders(commands.Cog, name="Erinnerungen"):
 
     def __init__(self, bot):
         self.bot = bot
-        # self.checkReminder.start()
+        self.checkReminder.start()
 
     @app_commands.command(name="reminder", description="Erstellt einen Reminder")
     @app_commands.describe(
-        zeit="Zeitangabe für die Erinnerung",
+        zeit="Zeitangabe für die Erinnerung, entweder nach Schema dd.mm.yyyy hh:mm oder in relativer Zeitangabe wie 1d 2h 3min",
         nachricht="Erinnerungsnachricht",
         zugriff="Sichtbarkeit der Erinnerung",
         user="Nutzer, der anstatt dir erwähnt werden soll"
@@ -100,12 +101,12 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             app_commands.Choice(name="öffentlich", value="public"), 
         ]
     )
-    async def newnewreminder(self, interaction: discord.Interaction, zeit: str, nachricht: str, zugriff: Optional[app_commands.Choice[str]], user: Optional[discord.User] = None):
+    async def newreminder(self, interaction: discord.Interaction, zeit: str, nachricht: str, zugriff: Optional[app_commands.Choice[str]], user: Optional[discord.User] = None):
         # Reminder is public by default
         is_private = False if not zugriff else zugriff.value == "private"
         
         relative_match = re.match(r'^((?P<days>\d+?)d)?\s*((?P<hours>\d+?)h)?\s*((?P<minutes>\d+?)min)?$', zeit)
-        absolute_match = re.match(r'^((?P<day>\d\d)(?P<month>\.\d\d)(?P<year>\.\d\d\d\d)?)?\s*(?P<time>(?P<hour>\d\d):(?P<minute>\d\d))?$', zeit)
+        absolute_match = re.match(r'^((?P<day>\d{1,2})(\.(?P<month>\d{1,2}))(\.(?P<year>\d\d(\d\d)?))?)?\s*(?P<time>(?P<hour>\d\d):(?P<minute>\d\d))?$', zeit)
         
         if not relative_match and not absolute_match:
             e = discord.Embed(title=f"Aktion unzulässig", description="Das angegebene Datum ist nicht zulässig.", color=discord.Color.red())
@@ -127,7 +128,11 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             if absolute_match.group("month"):
                 time = time.replace(month=int(absolute_match.group("month")))
             if absolute_match.group("year"):
-                time = time.replace(year=int(absolute_match.group("year")))
+                year = absolute_match.group("year")
+                if len(year) == 2:
+                    year = int(year) + 2000
+                time = time.replace(year=year)
+
 
             if absolute_match.group("time"):
                 time = time.replace(hour=int(absolute_match.group("hour")), minute=int(absolute_match.group("minute")))
@@ -137,6 +142,10 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             else:
                 time = time.replace(hour=0, minute=0)
                     
+            if time < datetime.datetime.now() and not absolute_match.group("year"):
+                # add one year
+                time = time.replace(year=time.year + 1)
+            
         if time < datetime.datetime.now():
             e = discord.Embed(
                 title=f"Aktion unzulässig", 
@@ -218,7 +227,7 @@ class Reminders(commands.Cog, name="Erinnerungen"):
                             content = "" + ' '.join([guild.get_role(role).mention for role in rem.roles])
                             content += " " + ' '.join([guild.get_member(user).mention for user in rem.users])
                             color = guild.get_member(rem.author).color
-                    embed = discord.Embed("Erinnerung", rem.message, color=color)
+                    embed = discord.Embed(title="Erinnerung", description=rem.message, color=color)
                     embed.timestamp = datetime.datetime.now()
                     embed.set_footer(text=self.bot.get_user(rem.author).name, icon_url=self.bot.get_user(rem.author).avatar)
 

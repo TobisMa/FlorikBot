@@ -72,6 +72,7 @@ async def on_ready():
 async def main():
     async with bot:
         await bot.load_extension("cogs.reminder")
+        await bot.load_extension("cogs.frieren_checker")
         # await bot.load_extension("cogs.user_messages")
         # await bot.load_extension("cogs.wholesome")
         # await bot.load_extension("cogs.utility")

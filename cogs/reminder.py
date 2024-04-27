@@ -41,7 +41,6 @@ class DeleteReminder(discord.ui.View):
 
     def __init__(self, reminders: List[Reminder]):
         super().__init__(timeout=60.0)
-        print(reminders)
         self.reminders = reminders
         self.options = [
             discord.SelectOption(
@@ -59,7 +58,6 @@ class DeleteReminder(discord.ui.View):
         self.add_item(self.select)        
                         
     async def callback(self, interaction: discord.Interaction) -> None:
-        print([self.reminders[int(value)].message for value in self.select.values])
         self.select.disabled = True
         plural = "en" if len(self.select.values) > 1 else ""
         e = discord.Embed(
@@ -115,11 +113,9 @@ class Reminders(commands.Cog, name="Erinnerungen"):
             return
 
         if relative_match:    
-            print("is relative")
             time = datetime.datetime.now() + self.parse_to_timedelta(zeit)
 
         if absolute_match:
-            print("is absolute")
             time = datetime.datetime.now()
             
             if absolute_match.group("day"):
@@ -305,5 +301,5 @@ def get_reminder():
 
 async def setup(bot):
     await bot.add_cog(Reminders(bot))
-    print("Reminder added")
+    print("Cog loaded: Reminder")
         

@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import public_config as config
 import aiohttp
 
+
 class FrierenStat(commands.Cog):
 
     URL = "https://myanimelist.net/anime/52991/Sousou_no_Frieren"
@@ -11,12 +12,15 @@ class FrierenStat(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.channel = bot.get_channel(config.get("frieren_stat_channel"))
+        if self.channel is None:
+            print("Failed loading channel with ID %r" % config.get("frieren_stat_channel"))
+
         self.last_value = self.getStat()
         if self.last_value is not None:
             self.last_value = float(self.last_value)
             self.checkStats.start()
         else:
-            ... # handle appropiate
+            print("Bad response when retrieving MAL")
 
     @tasks.loop(minutes=60)
     async def checkStats(self):
@@ -24,6 +28,7 @@ class FrierenStat(commands.Cog):
         try:
             new_stat = float(new_stat)
         except ValueError:
+            print("FrierenChecker: Failed reading stat value as float:", new_stat)
             return  # TODO handle more appropiate
         
         diff = new_stat - self.last_value
